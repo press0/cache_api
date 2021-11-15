@@ -5,6 +5,8 @@ import sys
 import glob
 import boto3
 import pandas as pd
+from pathlib import Path
+from pathlib import PurePosixPath
 
 DEBUG = True
 
@@ -13,20 +15,41 @@ AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
 
 
-def get_cache_item_from_remote_file(path):
-    """ :param path: relative path including file name under LOCAL_DATA_DIR """
+def get_cache_item_from_remote_file(string_path):
+    """ :param string_path: relative path including file name under LOCAL_DATA_DIR """
+
+    path = Path(LOCAL_DATA_DIR + '/' + string_path)
+
+    print(f'{path=}')
+    print(f'{path.name=}')
+    print(f'{path.exists()=}')
+
+    parent = Path(path).parent
+    print(f'{parent=}')
+    print(f'{parent.name=}')
+    print(f'{parent.exists()=}')
+
+    if not parent.exists():
+        parent.mkdir(parents=True, exist_ok=True)
+
+    print(f'{parent=}')
+    print(f'{parent.name=}')
+    print(f'{parent.exists()=}')
+
     try:
         s3 = boto3.client('s3',
                           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
                           )
         print('copy remote object s3://' +
-              f'{AWS_BUCKET_NAME + "/" + AWS_DATA_DIR + path}' +
-              ' to local file ' + f'{LOCAL_DATA_DIR + path}')
-        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + path, LOCAL_DATA_DIR + path)
-        return get_cache_item_from_local_file(path)
+              f'{AWS_BUCKET_NAME + "/" + AWS_DATA_DIR + string_path}' +
+              ' to local file ' + f'{LOCAL_DATA_DIR + string_path}')
+
+        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + string_path, LOCAL_DATA_DIR + string_path)
+
+        return get_cache_item_from_local_file(string_path)
     except Exception as e:
-        print(f'local file not found {path} {e}')
+        print(f'local file not found {string_path} {e}')
         return None
 
 
@@ -166,7 +189,6 @@ def head(path, options):
 
 def get(path=None, command='read', options=None):
     if command == 'head':
-        print(f'path {path} command {command} options {options}')
         return head(path, options)
     valid, return_val = validate_file_extension(path)
     print(f'valid {valid} path {path} command {command} options {options}')
@@ -176,6 +198,7 @@ def get(path=None, command='read', options=None):
         return read(path)
     if command == 'delete':
         return delete(path)
+
 
 dummy_content1 = {'foo': 'bar', 'foobar': 1}
 dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
