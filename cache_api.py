@@ -7,10 +7,10 @@ import boto3
 import pandas as pd
 
 DEBUG = True
-LOCAL_DATA_DIR = '../data/'
 
-AWS_DATA_DIR = 'idh/'
-AWS_BUCKET_NAME = 'lgima-dev-3pdh-data-bucket'
+LOCAL_DATA_DIR = os.getenv('LOCAL_DATA_DIR')
+AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
+AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
 
 
 def get_cache_item_from_remote_file(path):
