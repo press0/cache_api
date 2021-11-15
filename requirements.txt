@@ -21,3 +21,7 @@ six             1.16.0
 urllib3         1.26.7
 Werkzeug        2.0.2
 wheel           0.36.2
+
+Flask
+boto3
+pandas
