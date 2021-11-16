@@ -1,5 +1,7 @@
 .idea
 .env_secret
+.flaskenv
+
 venv
 z*/
 __pycache__
