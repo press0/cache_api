@@ -78,19 +78,20 @@ def get_cache_item_from_local_file(path):
 
 
 def validate_file_extension(path):
+    valid = False
+    return_val = ''
     if path is None or len(path) < 3:
         valid = False
         return_val = {'exception': f'bad path {path}'}
-        return valid, return_val
     else:
-        file_name, file_extension = os.path.splitext(path)
-    if file_extension != '.json' and file_extension != '.parquet':
-        valid = False
-        return_val = {'exception': f'file type {file_extension} not yet supported'}
-    else:
-        valid = True
-        return_val = None
-        return valid, return_val
+        file_extension = Path(path).suffix
+        if file_extension not in ['.json', '.parquet']:
+            valid = False
+            return_val = {'exception': f'file type {file_extension} not yet supported'}
+        else:
+            valid = True
+            return_val = None
+    return valid, return_val
 
 
 def validate_file_exists(path):
@@ -164,7 +165,10 @@ def read(path):
                 return_val = 'remote file not found ' + f'{AWS_DATA_DIR + path}'
                 print(return_val)
     debug(valid, return_val)
-    return return_val if valid else {'error': return_val}
+    if valid and Path(path).suffix == '.json':
+        return return_val.to_json()
+    else:
+        return return_val if valid else {'error': return_val}
 
 
 def head(path, options):
@@ -188,6 +192,7 @@ def head(path, options):
 
 
 def get(path=None, command='read', options=None):
+    print(f'{path=} {command=} {options=}')
     if command == 'head':
         return head(path, options)
     valid, return_val = validate_file_extension(path)
