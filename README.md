@@ -1,5 +1,17 @@
 # cache api
 
+### setup env vars
+``````
+LOCAL_DATA_DIR 
+AWS_DATA_DIR 
+AWS_BUCKET_NAME
+
+AWS ACCESS KEYS
+
+
+``````
+
+
 ### run
 ``````
 python cache_api_flask_rest_server.py
