@@ -1,13 +1,11 @@
 # cache api
 
-# api server
-
-run
+### run
 ``````
 python cache_api_flask_rest_server.py
 ``````
 
-test
+### test
 ``````
 curl  http://127.0.0.1:5000/cache/api/v1.0/?path=2/file1.snappy.parquet
 
@@ -29,16 +27,17 @@ valid:True return_val:                   cusip  price  security_type trade_date
 
 
 
-GET parameters
-``````
-create  same as Read
-read    curl  http://127.0.0.1:5000/cache/api/v1.0/?command=read\&path=file1.json
-update  same as delete then read   
-delete  curl  http://127.0.0.1:5000/cache/api/v1.0/?command=delete\&path=file1.json
-head    curl  http://127.0.0.1:5000/cache/api/v1.0/?command=head\&path=file1.json
+### GET parameters
 ``````
 
-POST forms
+create  same as Read
+read    ?command=read\&path=file1.json
+update  same as delete then read   
+delete  ?command=delete\&path=file1.json
+head    ?command=head\&path=file1.json
+``````
+
+### POST form
 ``````
 {
     "data": {
@@ -47,7 +46,7 @@ POST forms
     }
 }
 ``````
-REST-ish
+### REST
 
 ![cache_api](cache_api.png?raw=true "cache_api" )
 
