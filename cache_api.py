@@ -17,9 +17,7 @@ AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
 
 
-def get_cache_item_from_remote_file(string_path):
-    """ :param string_path: relative path including file name under LOCAL_DATA_DIR """
-
+def make_deep_directory(string_path):
     path = Path(LOCAL_DATA_DIR + '/' + string_path)
 
     print(f'{path=}')
@@ -38,6 +36,11 @@ def get_cache_item_from_remote_file(string_path):
     print(f'{parent.name=}')
     print(f'{parent.exists()=}')
 
+
+def get_cache_item_from_remote_file(string_path):
+    """ :param string_path: relative path including file name under LOCAL_DATA_DIR """
+
+    make_deep_directory(string_path)
     try:
         s3 = boto3.client('s3',
                           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
@@ -150,7 +153,7 @@ def cache_hit(path):
     format_float = "{:.12f}".format(data_access_time)
     expo_number = "{:e}".format(data_access_time)
     access_time = f'{format_float} seconds ({expo_number})'
-    print('cache hit, key=' + f'{path}, access time: {access_time} ')
+    print('cache hit, key:' + f'{path}, time: {access_time} ')
     return return_val
 
 
@@ -164,14 +167,14 @@ def read(path):
             s3cache.update(cache_item)
             valid = True
             return_val = s3cache.get(path)
-            print('cache update from local, key=' + f'{LOCAL_DATA_DIR + path}')
+            print('cache update from local, key:' + f'{LOCAL_DATA_DIR + path}')
         else:
             cache_item = get_cache_item_from_remote_file(path)
             if cache_item is not None:
                 s3cache.update(cache_item)
                 valid = True
                 return_val = s3cache.get(path)
-                print('cache update from remote, key=' + f'{AWS_DATA_DIR + path}')
+                print('cache update from remote, key:' + f'{AWS_DATA_DIR + path}')
             else:
                 valid = False
                 return_val = 'remote file not found ' + f'{AWS_DATA_DIR + path}'
