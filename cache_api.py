@@ -2,10 +2,11 @@ import json
 import os
 import os.path
 import sys
-from io import StringIO
 import glob
 import boto3
+import timeit
 import pandas as pd
+from io import StringIO
 from pathlib import Path
 from pathlib import PurePosixPath
 
@@ -142,11 +143,21 @@ def delete(path):
         return return_val if valid else {'error': return_val}
 
 
+def cache_hit(path):
+    start_time = timeit.default_timer()
+    return_val = s3cache.get(path)
+    data_access_time = timeit.default_timer() - start_time
+    format_float = "{:.12f}".format(data_access_time)
+    expo_number = "{:e}".format(data_access_time)
+    access_time = f'{format_float} seconds ({expo_number})'
+    print('cache hit, key=' + f'{path}, access time: {access_time} ')
+    return return_val
+
+
 def read(path):
     if path in s3cache:
         valid = True
-        return_val = s3cache.get(path)
-        print('cache hit, key=' + f'{path}')
+        return_val = cache_hit(path)
     else:
         cache_item = get_cache_item_from_local_file(path)
         if cache_item is not None:
