@@ -2,6 +2,7 @@ import json
 import os
 import os.path
 import sys
+from io import StringIO
 import glob
 import boto3
 import pandas as pd
@@ -55,7 +56,7 @@ def get_cache_item_from_remote_file(string_path):
 
 def get_cache_item_from_local_file(path):
     """ :param path: relative path including file name under LOCAL_DATA_DIR """
-    file_name, file_extension = os.path.splitext(path)
+    file_extension = Path(path).suffix
     # todo: size, date
 
     if file_extension == '.json':
@@ -165,8 +166,12 @@ def read(path):
                 return_val = 'remote file not found ' + f'{AWS_DATA_DIR + path}'
                 print(return_val)
     debug(valid, return_val)
-    if valid and Path(path).suffix == '.json':
-        return return_val.to_json()
+    if valid and Path(path).suffix == '.parquet':
+        old_stdout = sys.stdout
+        sys.stdout = my_stdout = StringIO()
+        return_val.info()
+        sys.stdout = old_stdout
+        return my_stdout.getvalue()
     else:
         return return_val if valid else {'error': return_val}
 
