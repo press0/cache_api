@@ -1,5 +1,9 @@
 # cache api
 
+[Cache-Aside](https://docs.microsoft.com/en-us/azure/architecture/patterns/cache-aside) resources from a System of Record such as AWS.
+
+
+
 ### setup env vars
 ``````
 LOCAL_DATA_DIR 
