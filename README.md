@@ -4,6 +4,11 @@
 
 
 
+
+![cache_api](cache_api.png?raw=true "cache_api" )
+
+
+
 ### setup env vars
 ``````
 LOCAL_DATA_DIR 
@@ -62,7 +67,3 @@ head    ?command=head\&path=file1.json
     }
 }
 ``````
-### REST
-
-![cache_api](cache_api.png?raw=true "cache_api" )
-
