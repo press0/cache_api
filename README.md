@@ -9,13 +9,12 @@
 
 
 
-### setup env vars
+### env vars
 ``````
-LOCAL_DATA_DIR 
-AWS_DATA_DIR 
-AWS_BUCKET_NAME
-
-AWS ACCESS KEYS
+LOCAL_DATA_DIR   # cache root path in a container or development machine  
+AWS_BUCKET_NAME  # System of Record AWS S3 bucket 
+AWS_DATA_DIR     # System of Record AWS root path 
+AWS ACCESS KEYS  # System of Record AWS IAM keys 
 
 
 ``````
