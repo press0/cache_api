@@ -4,10 +4,14 @@
 
 
 
-
 ![cache_api](cache_api.png?raw=true "cache_api" )
 
-
+### nomenclature
+``````
+data locality - co-location of data and compute resources. shared memory.
+system of record - primary data source
+cache - a fast access copy of SOR data 
+``````
 
 ### env vars
 ``````
@@ -15,8 +19,6 @@ LOCAL_DATA_DIR   # cache root path in a container or development machine
 AWS_BUCKET_NAME  # System of Record AWS S3 bucket 
 AWS_DATA_DIR     # System of Record AWS root path 
 AWS ACCESS KEYS  # System of Record AWS IAM keys 
-
-
 ``````
 
 
@@ -66,3 +68,7 @@ head    ?command=head\&path=file1.json
     }
 }
 ``````
+
+### use case
+
+![use case](cache-usecase-diagram.png?raw=true "cache_api" )
