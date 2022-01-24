@@ -178,14 +178,7 @@ def read(path):
                 return_val = 'remote file not found ' + f'{AWS_DATA_DIR + path}'
                 print(return_val)
     debug(valid, return_val)
-    if valid and Path(path).suffix == '.parquet':
-        old_stdout = sys.stdout
-        sys.stdout = my_stdout = StringIO()
-        return_val.info()
-        sys.stdout = old_stdout
-        return my_stdout.getvalue()
-    else:
-        return return_val if valid else {'error': return_val}
+    return {'result': 'success'} if valid else {'error': return_val}
 
 
 def head(path, options):
@@ -209,6 +202,7 @@ def head(path, options):
 
 
 def get(path=None, command='read', options=None):
+    print(f'{cache.keys()=}')
     print(f'{path=} {command=} {options=}')
     if command == 'head':
         return head(path, options)
@@ -216,13 +210,14 @@ def get(path=None, command='read', options=None):
     print(f'valid {valid} path {path} command {command} options {options}')
     if not valid:
         return return_val
-    if command == 'read':
+    if command == 'read' or command == 'create':
         return read(path)
     if command == 'delete':
         return delete(path)
 
 
 def function_router(module_name, *args, **kwargs):
+    print(f'{cache.keys()=}')
     full_module_name = 'function.' + module_name
     module = importlib.import_module(full_module_name)
     function = getattr(module, 'main')

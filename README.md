@@ -27,9 +27,9 @@ AWS ACCESS KEYS  # System of Record AWS IAM keys
 python cache_api_flask_rest_server.py
 ``````
 
-### test
+### create cache 
 ``````
-curl  http://127.0.0.1:5000/cache/api/v1.0/?path=2/file1.snappy.parquet
+curl  http://127.0.0.1:5000/cache/api/v1.0/?command=create\&path=file1.snappy.parquet
 
 cache hit, key:2/file1.snappy.parquet, time: 0.000000754138 seconds (7.541385e-07) 
 valid:True return_val:                   cusip  price  security_type trade_date
@@ -46,20 +46,61 @@ valid:True return_val:                   cusip  price  security_type trade_date
 780              2017-11   2.35            NaN       None
 
 ``````
-
+### create functions
+``````python
+def main(cache, key):
 ``````
-curl  http://127.0.0.1:5000/cache/api/v1.0/?path=2/file1.snappy.parquet\&
+
+### run functions on the cache
+``````
+time curl  http://127.0.0.1:5000/cache/api/v1.0/?function=cache_item_stats\&key=file1.snappy.parquet | sed 's/\\n/\n/g'
+
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+100   513  100   513    0     0  19730      0 --:--:-- --:--:-- --:--:-- 19730
+{
+    "return": {
+        "uri": "/cache/api/v1.0/",
+        "value": "(                   cusip  price  security_type trade_date
+0                  Unit:    NaN            NaN       None
+1            Multiplier:   1.00            NaN       None
+2              Currency:    NaN            NaN       None
+3    Unique Identifier:     NaN            NaN       None
+4            Time Period    NaN            NaN       None
+..                   ...    ...            ...        ...
+776              2017-07   2.32            NaN       None
+777              2017-08   2.21            NaN       None
+778              2017-09   2.20            NaN       None
+779              2017-10   2.36            NaN       None
+780              2017-11   2.35            NaN       None
+
+[781 rows x 4 columns], \"<class 'pandas.core.frame.DataFrame'>\
+RangeIndex: 781 entries, 0 to 780\
+Data columns (total 4 columns):\
+ #   Column         Non-Null Count  Dtype  \
+---  ------         --------------  -----  \
+ 0   cusip          781 non-null    object \
+ 1   price          777 non-null    float64\
+ 2   security_type  0 non-null      float64\
+ 3   trade_date     0 non-null      object \
+dtypes: float64(2), object(2)\
+memory usage: 24.5+ KB\
+
 ``````
 
 
 ### GET parameters
 ``````
+# cache management commands
+create     same as read
+read       command=read\&path=file1.json
+update     same as delete + read   
+delete     command=delete\&path=file1.json
+head       command=head\&path=file1.json
 
-create  same as Read
-read    ?command=read\&path=file1.json
-update  same as delete then read   
-delete  ?command=delete\&path=file1.json
-head    ?command=head\&path=file1.json
+# function execution
+function   function=custom_function
+parameters custom_parameter=custom_value
 ``````
 
 ### POST form
@@ -70,6 +111,14 @@ head    ?command=head\&path=file1.json
     "path" = "file1.json"
     }
 }
+
+{
+    "data": {
+    "function" = "function_name",
+    "parameter_name" = "parameter_value"
+    }
+}
+
 ``````
 
 ### use case

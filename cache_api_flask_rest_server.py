@@ -20,6 +20,7 @@ class CacheAPI(Resource):
         start = int(request.args.get('start', 1))
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
+        print('------')
         print(f'{path=}')
         print(f'{command=}')
         print(f'{options=}')
@@ -28,6 +29,7 @@ class CacheAPI(Resource):
         print(f'{start=}')
         print(f'{stop=}')
         print(f'{key=}')
+        print('------')
 
         if function is None:
             return_value = cache_api.get(path, command, options)

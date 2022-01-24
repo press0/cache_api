@@ -11,7 +11,10 @@ def main(cache, key):
     print(f'{key=}')
     print(f'{file_extension=}')
     print(f'{cache=}')
-    item = cache[key]
+    if key in cache.keys():
+        item = cache[key]
+    else:
+        return {'result': 'cache key not found'}
 
     if file_extension == '.json':
         print(f'{item=}')
@@ -22,9 +25,5 @@ def main(cache, key):
         sys.stdout = my_stdout = StringIO()
         item.info()
         sys.stdout = old_stdout
-        item_info = my_stdout.getvalue()
-        formatted_item_info = item_info.split(sep='\n')
-        print('formatted_item_info')
-        for s in formatted_item_info:
-            print(s)
-        return item_info
+        item_stats = my_stdout.getvalue()
+        return item, item_stats
