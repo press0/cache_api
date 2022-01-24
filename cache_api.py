@@ -8,7 +8,7 @@ import timeit
 import pandas as pd
 from io import StringIO
 from pathlib import Path
-from pathlib import PurePosixPath
+import importlib
 
 DEBUG = True
 
@@ -83,8 +83,6 @@ def get_cache_item_from_local_file(path):
 
 
 def validate_file_extension(path):
-    valid = False
-    return_val = ''
     if path is None or len(path) < 3:
         valid = False
         return_val = {'exception': f'bad path {path}'}
@@ -115,7 +113,7 @@ def delete_file(path):
 
 
 def evict_cache_entry(path):
-    del s3cache[path]
+    del cache[path]
     print(f'cache entry evicted {path}')
     valid, return_val = validate_file_exists(path)
     if valid:
@@ -135,7 +133,7 @@ def debug(valid, return_val):
 
 
 def delete(path):
-    if path in s3cache:
+    if path in cache:
         valid, return_val = evict_cache_entry(path)
     else:
         valid = False
@@ -148,7 +146,7 @@ def delete(path):
 
 def cache_hit(path):
     start_time = timeit.default_timer()
-    return_val = s3cache.get(path)
+    return_val = cache.get(path)
     data_access_time = timeit.default_timer() - start_time
     format_float = "{:.12f}".format(data_access_time)
     expo_number = "{:e}".format(data_access_time)
@@ -158,22 +156,22 @@ def cache_hit(path):
 
 
 def read(path):
-    if path in s3cache:
+    if path in cache:
         valid = True
         return_val = cache_hit(path)
     else:
         cache_item = get_cache_item_from_local_file(path)
         if cache_item is not None:
-            s3cache.update(cache_item)
+            cache.update(cache_item)
             valid = True
-            return_val = s3cache.get(path)
+            return_val = cache.get(path)
             print('cache update from local, key:' + f'{LOCAL_DATA_DIR + path}')
         else:
             cache_item = get_cache_item_from_remote_file(path)
             if cache_item is not None:
-                s3cache.update(cache_item)
+                cache.update(cache_item)
                 valid = True
-                return_val = s3cache.get(path)
+                return_val = cache.get(path)
                 print('cache update from remote, key:' + f'{AWS_DATA_DIR + path}')
             else:
                 valid = False
@@ -197,10 +195,10 @@ def head(path, options):
     cache = []
     local_data_files = []
     telemetry = []
-    for key in s3cache.keys():
+    for key in cache.keys():
         cache.append(key)
     return_val['cache'] = cache
-    return_val['memory'] = sys.getsizeof(s3cache)
+    return_val['memory'] = sys.getsizeof(cache)
     for filename in glob.iglob(LOCAL_DATA_DIR + '**', recursive=True):
         local_data_files.append(filename)
     return_val['local_data_files'] = local_data_files
@@ -224,9 +222,18 @@ def get(path=None, command='read', options=None):
         return delete(path)
 
 
+def function_router(module_name, *args, **kwargs):
+    full_module_name = 'function.' + module_name
+    module = importlib.import_module(full_module_name)
+    function = getattr(module, 'main')
+    return_val = function(cache, *args, **kwargs)
+    print(f'{return_val=}')
+    return return_val
+
+
 dummy_content1 = {'foo': 'bar', 'foobar': 1}
 dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
-s3cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
+cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
 
 if __name__ == '__main__':
     if len(sys.argv) == 2:

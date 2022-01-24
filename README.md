@@ -9,8 +9,9 @@
 ### nomenclature
 ``````
 data locality - co-location of data and compute resources. shared memory.
-system of record - primary data source
-cache - a fast access copy of SOR data 
+system of record (SOR) - primary data source
+cache - fast access copy of SOR data
+data locality optimized copy of SOR data  
 ``````
 
 ### env vars
@@ -20,7 +21,6 @@ AWS_BUCKET_NAME  # System of Record AWS S3 bucket
 AWS_DATA_DIR     # System of Record AWS root path 
 AWS ACCESS KEYS  # System of Record AWS IAM keys 
 ``````
-
 
 ### run
 ``````
@@ -47,6 +47,9 @@ valid:True return_val:                   cusip  price  security_type trade_date
 
 ``````
 
+``````
+curl  http://127.0.0.1:5000/cache/api/v1.0/?path=2/file1.snappy.parquet\&
+``````
 
 
 ### GET parameters
@@ -72,3 +75,12 @@ head    ?command=head\&path=file1.json
 ### use case
 
 ![use case](cache-usecase-diagram.png?raw=true "cache_api" )
+
+
+### roadmap cache futures
+
+- delete method
+- thread_pool 
+- @compute_result, @athena_result, @sql_result
+- @lru_cache
+- eviction policy
