@@ -10,11 +10,10 @@ def main(cache, key):
     file_extension = key[key.rindex("."):]
     print(f'{key=}')
     print(f'{file_extension=}')
-    print(f'{cache=}')
     if key in cache.keys():
         item = cache[key]
     else:
-        return {'result': 'cache key not found'}
+        return {'result': f'cache key {key} not found'}
 
     if file_extension == '.json':
         print(f'{item=}')

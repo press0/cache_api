@@ -32,13 +32,16 @@ class CacheAPI(Resource):
         print('------')
 
         if function is None:
-            return_value = cache_api.get(path, command, options)
+            if command in ['read', 'create', 'delete', 'head']:
+                return_value = cache_api.function_router(module_name=command, path=path, options=options)
+
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),
                 'path': fields.String,
                 'value': fields.String
             }
+
         else:
             if function == 'random_number':
                 return_value = cache_api.function_router(function, start, stop)

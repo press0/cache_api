@@ -124,6 +124,8 @@ def evict_cache_entry(path):
     else:
         print(f'{return_val}')
         return valid, return_val
+    print(f'{return_val}')
+    return valid, return_val
 
 
 def debug(valid, return_val):
@@ -180,6 +182,10 @@ def read(path):
     return {'result': 'success'} if valid else {'error': return_val}
 
 
+def create(path):
+    return read(path)
+
+
 def head(path, options):
     telemetry_path = os.path.join(os.getcwd(), '') if path is None else os.path.join(path, '')  # trailing slash
     telemetry_recursive_option = False if options is None else True
@@ -200,28 +206,27 @@ def head(path, options):
     return return_val
 
 
-def get(path=None, command='read', options=None):
-    print(f'{cache.keys()=}')
-    print(f'{path=} {command=} {options=}')
-    if command == 'head':
-        return head(path, options)
-    valid, return_val = validate_file_extension(path)
-    print(f'valid {valid} path {path} command {command} options {options}')
-    if not valid:
-        return return_val
-    if command == 'read' or command == 'create':
-        return read(path)
-    if command == 'delete':
-        return delete(path)
-
-
 def function_router(module_name, *args, **kwargs):
-    print(f'{cache.keys()=}')
-    full_module_name = 'function.' + module_name
-    # todo: timeit
-    module = importlib.import_module(full_module_name)
-    function = getattr(module, 'main')
-    return_val = function(cache, *args, **kwargs)
+    print(f'beginning {cache.keys()=}')
+    if module_name in ['read', 'create', 'delete', 'head']:
+        command = kwargs.get('command')
+        path = kwargs.get('path')
+        options = kwargs.get('options')
+        valid, return_val = validate_file_extension(path)
+        print(f'{valid=} {command=} {path=} {options=}')
+        if not valid:
+            return return_val
+        if module_name in ['read', 'create', 'delete']:
+            return_val = globals()[module_name](path)
+        elif module_name in ['head']:
+            return_val = globals()[module_name](path, options)
+    else:
+        full_module_name = 'function.' + module_name
+        # todo: timeit
+        module = importlib.import_module(full_module_name)
+        function = getattr(module, 'main')
+        return_val = function(cache, *args, **kwargs)
+    print(f'ending {cache.keys()=}')
     print(f'{return_val=}')
     return return_val
 
@@ -231,9 +236,4 @@ dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
 
 if __name__ == '__main__':
-    if len(sys.argv) == 2:
-        get(sys.argv[1])
-elif len(sys.argv) == 3:
-    get(sys.argv[1], sys.argv[2])
-else:
-    print('unexpected')
+    pass
