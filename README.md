@@ -8,10 +8,9 @@
 
 ### nomenclature
 ``````
-data locality - co-location of data and compute resources. shared memory.
 system of record (SOR) - primary data source
 cache - fast access copy of SOR data
-data locality optimized copy of SOR data  
+data locality - co-location of data and compute resources. shared memory.
 ``````
 
 ### env vars
@@ -31,24 +30,18 @@ python cache_api_flask_rest_server.py
 ``````
 curl  http://127.0.0.1:5000/cache/api/v1.0/?command=create\&path=file1.snappy.parquet
 
-cache hit, key:2/file1.snappy.parquet, time: 0.000000754138 seconds (7.541385e-07) 
-valid:True return_val:                   cusip  price  security_type trade_date
-0                  Unit:    NaN            NaN       None
-1            Multiplier:   1.00            NaN       None
-2              Currency:    NaN            NaN       None
-3    Unique Identifier:     NaN            NaN       None
-4            Time Period    NaN            NaN       None
-..                   ...    ...            ...        ...
-776              2017-07   2.32            NaN       None
-777              2017-08   2.21            NaN       None
-778              2017-09   2.20            NaN       None
-779              2017-10   2.36            NaN       None
-780              2017-11   2.35            NaN       None
+{
+    "return": {
+        "uri": "/cache/api/v1.0/",
+        "path": "file1.snappy.parquet",
+        "value": "{'result': 'success'}"
+    }
+}
 
 ``````
 ### create functions
 ``````python
-def main(cache, key):
+def main(cache, **args, **kwargs):
 ``````
 
 ### run functions on the cache
