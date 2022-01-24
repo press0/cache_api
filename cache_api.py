@@ -6,7 +6,6 @@ import glob
 import boto3
 import timeit
 import pandas as pd
-from io import StringIO
 from pathlib import Path
 import importlib
 
@@ -219,6 +218,7 @@ def get(path=None, command='read', options=None):
 def function_router(module_name, *args, **kwargs):
     print(f'{cache.keys()=}')
     full_module_name = 'function.' + module_name
+    # todo: timeit
     module = importlib.import_module(full_module_name)
     function = getattr(module, 'main')
     return_val = function(cache, *args, **kwargs)

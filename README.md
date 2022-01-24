@@ -21,12 +21,12 @@ AWS_DATA_DIR     # System of Record AWS root path
 AWS ACCESS KEYS  # System of Record AWS IAM keys 
 ``````
 
-### run
+### run api server
 ``````
 python cache_api_flask_rest_server.py
 ``````
 
-### create cache 
+### create cache from S3 objects
 ``````
 curl  http://127.0.0.1:5000/cache/api/v1.0/?command=create\&path=file1.snappy.parquet
 
