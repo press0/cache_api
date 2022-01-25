@@ -1,6 +1,6 @@
 # cache api
 
-[Cache-Aside](https://docs.microsoft.com/en-us/azure/architecture/patterns/cache-aside) resources from a System of Record such as AWS.
+[Cache-Aside](https://docs.microsoft.com/en-us/azure/architecture/patterns/cache-aside) AWS resource service 
 
 
 
@@ -26,9 +26,9 @@ AWS ACCESS KEYS  # System of Record AWS IAM keys
 python cache_api_flask_rest_server.py
 ``````
 
-### create cache from S3 objects
+### create cache from s3 objects
 ``````
-curl  http://127.0.0.1:5000/cache/api/v1.0/?command=create\&path=file1.snappy.parquet
+curl  http://127.0.0.1:5000/cache/api/v1.0/?function=create\&path=file1.snappy.parquet
 
 {
     "return": {
@@ -44,7 +44,7 @@ curl  http://127.0.0.1:5000/cache/api/v1.0/?command=create\&path=file1.snappy.pa
 def main(cache, **args, **kwargs):
 ``````
 
-### run functions on the cache
+### run the functions on the cache
 ``````
 time curl  http://127.0.0.1:5000/cache/api/v1.0/?function=cache_item_stats\&key=file1.snappy.parquet | sed 's/\\n/\n/g'
 
@@ -84,23 +84,23 @@ memory usage: 24.5+ KB\
 
 ### GET parameters
 ``````
-# cache management commands
+# cache management 
 create     same as read
-read       command=read\&path=file1.json
+read       function=read&path=file1.json
 update     same as delete + read   
-delete     command=delete\&path=file1.json
-head       command=head\&path=file1.json
+delete     function=delete&path=file1.json
+head       function=head&path=file1.json
 
 # function execution
-function   function=custom_function
-parameters custom_parameter=custom_value
+function   function=function_name
+parameter parameter_name=parameter_value
 ``````
 
 ### POST form
 ``````
 {
     "data": {
-    "command" = "read",
+    "function" = "read",
     "path" = "file1.json"
     }
 }
@@ -121,8 +121,8 @@ parameters custom_parameter=custom_value
 
 ### roadmap cache futures
 
-- delete method
+- data spec file
 - thread_pool 
-- @compute_result, @athena_result, @sql_result
+- @compute_result, @sql_result
 - @lru_cache
 - eviction policy
