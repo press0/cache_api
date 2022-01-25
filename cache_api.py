@@ -142,7 +142,7 @@ def delete(path):
     if valid:
         return_val = {'cache_item deleted': path}
         debug(valid, return_val)
-        return return_val if valid else {'error': return_val}
+    return return_val if valid else {'error': return_val}
 
 
 def cache_hit(path):
@@ -206,27 +206,38 @@ def head(path=None, options=None):
     return return_val
 
 
+def cache_api(function, kwargs):
+    path = kwargs.get('path')
+    options = kwargs.get('options')
+    if function in ['head']:
+        return_val = globals()[function](path, options)
+    elif function in ['read', 'create', 'delete']:
+        valid, return_val = validate_file_extension(path)
+        if not valid:
+            print(f'invalid path {path} ')
+        else:
+            return_val = globals()[function](path)
+    return return_val
+
+
+def my_api(function, args, kwargs):
+    full_module_name = 'function.' + function
+    # todo: timeit
+    module = importlib.import_module(full_module_name)
+    function_ref = getattr(module, 'main')
+    return_val = function_ref(cache, *args, **kwargs)
+    return return_val
+
+
 def function_router(function, *args, **kwargs):
+    print(f'===> {function=} {args=} {kwargs=}')
     print(f'beginning {cache.keys()=}')
     if function in ['read', 'create', 'delete', 'head']:
-        path = kwargs.get('path')
-        options = kwargs.get('options')
-        print(f'{function=} {path=} {options=}')
-        if function in ['head']:
-            return_val = globals()[function](path, options)
-        elif function in ['read', 'create', 'delete']:
-            valid, return_val = validate_file_extension(path)
-            if not valid:
-                print(f'path {path} not valid')
-            return_val = globals()[function](path)
+        return_val = cache_api(function, kwargs)
     else:
-        full_module_name = 'function.' + function
-        # todo: timeit
-        module = importlib.import_module(full_module_name)
-        function_ref = getattr(module, 'main')
-        return_val = function_ref(cache, *args, **kwargs)
+        return_val = my_api(function, args, kwargs)
     print(f'ending {cache.keys()=}')
-    print(f'{return_val=}')
+    print(f'===> {return_val=}')
     return return_val
 
 
@@ -235,4 +246,9 @@ dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
 
 if __name__ == '__main__':
-    pass
+    from local_config import *
+    function_router('delete', path='file1.snappy.parquet')
+    function_router('create', path='file1.snappy.parquet')
+    function_router('cache_item_stats', 'file1.snappy.parquet')
+    function_router('create', path='xfile1.snappy.parquet')
+    function_router('head')

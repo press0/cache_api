@@ -20,15 +20,9 @@ class CacheAPI(Resource):
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
         print('------')
-        print(f'{function=}')
-        print(f'{path=}')
-        print(f'{options=}')
-        print(f'{message=}')
-        print(f'{start=}')
-        print(f'{stop=}')
-        print(f'{key=}')
+        print(f'{function=} {path=} {options=}')
+        print(f'{message=} {start=} {stop=} {key=}')
         print('------')
-
         if function in ['read', 'create', 'delete', 'head']:
             return_value = cache_api.function_router(function=function, path=path, options=options)
             cache_item = {'path': path, 'value': return_value}

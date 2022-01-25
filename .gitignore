@@ -1,6 +1,7 @@
 .idea
 .env_secret
 .flaskenv
+local_config.py
 
 venv
 z*/
