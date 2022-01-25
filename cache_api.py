@@ -186,16 +186,16 @@ def create(path):
     return read(path)
 
 
-def head(path, options):
+def head(path=None, options=None):
     telemetry_path = os.path.join(os.getcwd(), '') if path is None else os.path.join(path, '')  # trailing slash
     telemetry_recursive_option = False if options is None else True
     return_val = {}
-    cache = []
+    tmp_cache = []
     local_data_files = []
     telemetry = []
     for key in cache.keys():
-        cache.append(key)
-    return_val['cache'] = cache
+        tmp_cache.append(key)
+    return_val['cache'] = tmp_cache
     return_val['memory'] = sys.getsizeof(cache)
     for filename in glob.iglob(LOCAL_DATA_DIR + '**', recursive=True):
         local_data_files.append(filename)
@@ -206,26 +206,25 @@ def head(path, options):
     return return_val
 
 
-def function_router(module_name, *args, **kwargs):
+def function_router(function, *args, **kwargs):
     print(f'beginning {cache.keys()=}')
-    if module_name in ['read', 'create', 'delete', 'head']:
-        command = kwargs.get('command')
+    if function in ['read', 'create', 'delete', 'head']:
         path = kwargs.get('path')
         options = kwargs.get('options')
-        valid, return_val = validate_file_extension(path)
-        print(f'{valid=} {command=} {path=} {options=}')
-        if not valid:
-            return return_val
-        if module_name in ['read', 'create', 'delete']:
-            return_val = globals()[module_name](path)
-        elif module_name in ['head']:
-            return_val = globals()[module_name](path, options)
+        print(f'{function=} {path=} {options=}')
+        if function in ['head']:
+            return_val = globals()[function](path, options)
+        elif function in ['read', 'create', 'delete']:
+            valid, return_val = validate_file_extension(path)
+            if not valid:
+                print(f'path {path} not valid')
+            return_val = globals()[function](path)
     else:
-        full_module_name = 'function.' + module_name
+        full_module_name = 'function.' + function
         # todo: timeit
         module = importlib.import_module(full_module_name)
-        function = getattr(module, 'main')
-        return_val = function(cache, *args, **kwargs)
+        function_ref = getattr(module, 'main')
+        return_val = function_ref(cache, *args, **kwargs)
     print(f'ending {cache.keys()=}')
     print(f'{return_val=}')
     return return_val

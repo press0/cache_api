@@ -12,36 +12,31 @@ class CacheAPI(Resource):
         super(CacheAPI, self).__init__()
 
     def get(self):
+        function = request.args.get('function', 'read')
         path = request.args.get('path', None)
-        command = request.args.get('command', 'read')
         options = request.args.get('options', None)
-        function = request.args.get('function', None)
         message = request.args.get('message', "hello world")
         start = int(request.args.get('start', 1))
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
         print('------')
-        print(f'{path=}')
-        print(f'{command=}')
-        print(f'{options=}')
         print(f'{function=}')
+        print(f'{path=}')
+        print(f'{options=}')
         print(f'{message=}')
         print(f'{start=}')
         print(f'{stop=}')
         print(f'{key=}')
         print('------')
 
-        if function is None:
-            if command in ['read', 'create', 'delete', 'head']:
-                return_value = cache_api.function_router(module_name=command, path=path, options=options)
-
+        if function in ['read', 'create', 'delete', 'head']:
+            return_value = cache_api.function_router(function=function, path=path, options=options)
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),
                 'path': fields.String,
                 'value': fields.String
             }
-
         else:
             if function == 'random_number':
                 return_value = cache_api.function_router(function, start, stop)
