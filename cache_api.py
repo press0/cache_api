@@ -60,24 +60,24 @@ def get_cache_item_from_remote_file(string_path):
         return None
 
 
-def get_function_from_remote_file(string_path):
-    """ :param string_path: relative path including file name under LOCAL_DATA_DIR """
+def get_function_from_remote_file(path):
+    """ :param path: relative path including file name under LOCAL_DATA_DIR """
 
-    make_deep_directory(LOCAL_FUNCTION_DIR, string_path)
+    make_deep_directory(LOCAL_FUNCTION_DIR, path)
     try:
         s3 = boto3.client('s3',
                           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
                           )
         print('copy remote object s3://' +
-              f'{AWS_BUCKET_NAME + "/" + AWS_FUNCTION_DIR + string_path}' +
-              ' to local file ' + f'{LOCAL_FUNCTION_DIR + string_path}')
+              f'{AWS_BUCKET_NAME + "/" + AWS_FUNCTION_DIR + path}' +
+              ' to local file ' + f'{LOCAL_FUNCTION_DIR + path}')
 
-        s3.download_file(AWS_BUCKET_NAME, AWS_FUNCTION_DIR + string_path, LOCAL_FUNCTION_DIR + string_path)
+        s3.download_file(AWS_BUCKET_NAME, AWS_FUNCTION_DIR + path, LOCAL_FUNCTION_DIR + path)
 
         return True
     except Exception as e:
-        print(f'local file not found {string_path} {e}')
+        print(f'local file not found {path} {e}')
         return False
 
 
@@ -107,14 +107,17 @@ def get_cache_item_from_local_file(path):
 
 def validate_file_extension(path):
     if path is None or len(path) < 3:
+        valid = False
         return_val = {'exception': f'bad path {path}'}
     else:
         file_extension = Path(path).suffix
         if file_extension not in ['.json', '.parquet']:
-            return_val = {'exception': f'file type {file_extension} is not supported'}
+            valid = False
+            return_val = {'exception': f'file type {file_extension} not yet supported'}
         else:
-            return_val = True
-    return return_val
+            valid = True
+            return_val = None
+    return valid, return_val
 
 
 def validate_file_exists(path):
@@ -231,8 +234,8 @@ def cache_api(function, kwargs):
     path = kwargs.get('path')
     options = kwargs.get('options')
     if function in ['read', 'create', 'delete']:
-        return_val = validate_file_extension(path)
-        if return_val:
+        valid, return_val = validate_file_extension(path)
+        if valid:
             return_val = globals()[function](path)
         else:
             print(f'invalid path {path} ')
@@ -272,12 +275,12 @@ def function_router(function, *args, **kwargs):
 
 def function_register(path):
     """
-    :param path: remote path to python function to be registered
+    :param path: remote path to python function to register
     :return success or failure
 
-    #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{function_path}'
+    #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}'
     #2 curl function=function_register, path=function_path
-    #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_DATA_DIR}{function_path} {AWS_FUNCTION_DIR}
+    #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
 
     aws s3 cp ~/say_hello1.py  s3://press0-test/json/say_hello2.py
     curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_register\&path=say_hello2.py
@@ -296,7 +299,7 @@ if __name__ == '__main__':
 
     function_router('random_number', 1, stop=10)
     function_router('say_hello', 'hello world')
-
+    function_router('create', path='file1.snappy.parq')
     function_router('create', path='file1.snappy.parquet')
     function_router('read', path='file1.snappy.parquet')
     function_router('cache_item_stats', 'file1.snappy.parquet')
