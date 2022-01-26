@@ -10,11 +10,11 @@ from pathlib import Path
 import importlib
 
 DEBUG = False
+LOCAL_DATA_DIR = 'data/'
+LOCAL_FUNCTION_DIR = 'function/'
 
-LOCAL_DATA_DIR = os.getenv('LOCAL_DATA_DIR')
 AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
-LOCAL_FUNCTION_DIR = os.getenv('LOCAL_FUNCTION_DIR')
 AWS_FUNCTION_DIR = os.getenv('AWS_FUNCTION_DIR')
 
 
