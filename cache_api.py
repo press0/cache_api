@@ -39,28 +39,26 @@ def make_deep_directory(base_directory, string_path):
         print(f'{parent.exists()=}')
 
 
-def get_cache_item_from_remote_file(string_path):
-
-    make_deep_directory(LOCAL_DATA_DIR, string_path)
+def get_cache_item_from_remote_file(path):
+    make_deep_directory(LOCAL_DATA_DIR, path)
     try:
         s3 = boto3.client('s3',
                           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
                           )
         print('copy remote object s3://' +
-              f'{AWS_BUCKET_NAME + "/" + AWS_DATA_DIR + string_path}' +
-              ' to local file ' + f'{LOCAL_DATA_DIR + string_path}')
+              f'{AWS_BUCKET_NAME + "/" + AWS_DATA_DIR + path}' +
+              ' to local file ' + f'{LOCAL_DATA_DIR + path}')
 
-        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + string_path, LOCAL_DATA_DIR + string_path)
+        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + path, LOCAL_DATA_DIR + path)
 
-        return get_cache_item_from_local_file(string_path)
+        return get_cache_item_from_local_file(path)
     except Exception as e:
-        print(f'local file not found {string_path} {e}')
+        print(f'local file not found {path} {e}')
         return None
 
 
 def get_function_from_remote_file(path):
-
     make_deep_directory(LOCAL_FUNCTION_DIR, path)
     try:
         s3 = boto3.client('s3',
