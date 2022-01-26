@@ -286,6 +286,10 @@ def function_router(function, *args, **kwargs):
     return return_val
 
 
+def run(function, *args, **kwargs):
+    return function_router(function, *args, **kwargs)
+
+
 dummy_content1 = {'foo': 'bar', 'foobar': 1}
 dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
@@ -293,14 +297,14 @@ cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': du
 if __name__ == '__main__':
     from local_config import *
 
-    function_router('random_number', 1, stop=10)
-    function_router('say_hello', 'hello world')
-    function_router('cache_create', path='file1.snappy.parq')
-    function_router('cache_create', path='file1.snappy.parquet')
-    function_router('cache_read', path='file1.snappy.parquet')
-    function_router('stats_cache_item', 'file1.snappy.parquet')
-    function_router('cache_delete', path='file1.snappy.parquet')
-    function_router('stats_cache')
-    function_router('say_hello1', message='hello - I am not registered')
-    function_router('function_register', path='say_hello1.py')
-    function_router('say_hello1', message='hello - i am registered now')
+    run(function='random_number', start=1, stop=10)
+    run(function='say_hello', message='hello world')
+    run(function='cache_create', path='file1.snappy.parq')
+    run(function='cache_create', path='file1.snappy.parquet')
+    run(function='cache_read', path='file1.snappy.parquet')
+    run(function='stats_cache_item', key='file1.snappy.parquet')
+    run(function='cache_delete', path='file1.snappy.parquet')
+    run(function='stats_cache')
+    run(function='say_hello1', message='hello - I am not registered')
+    run(function='function_register', path='say_hello1.py')
+    run(function='say_hello1', message='hello - i am registered now')
