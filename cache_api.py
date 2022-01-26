@@ -282,7 +282,7 @@ def function_register(path):
     #2 curl function=function_register, path=function_path
     #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
 
-    aws s3 cp ~/say_hello1.py  s3://press0-test/json/say_hello2.py
+    aws s3 cp ~/say_hello1.py  s3://{AWS_BUCKET_NAME}/json/say_hello2.py
     curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_register\&path=say_hello2.py
     curl  http://127.0.0.1:5000/cache/api/v1.0/?function=say_hello2\&message=hello_world
     """
