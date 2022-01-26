@@ -40,7 +40,6 @@ def make_deep_directory(base_directory, string_path):
 
 
 def get_cache_item_from_remote_file(string_path):
-    """ :param string_path: relative path including file name under LOCAL_DATA_DIR """
 
     make_deep_directory(LOCAL_DATA_DIR, string_path)
     try:
@@ -61,7 +60,6 @@ def get_cache_item_from_remote_file(string_path):
 
 
 def get_function_from_remote_file(path):
-    """ :param path: relative path including file name under LOCAL_DATA_DIR """
 
     make_deep_directory(LOCAL_FUNCTION_DIR, path)
     try:
@@ -157,7 +155,7 @@ def debug(valid, return_val):
         print(f'valid:{valid} return_val:{return_val}')
 
 
-def delete(path):
+def cache_delete(path):
     if path in cache:
         valid, return_val = evict_cache_entry(path)
     else:
@@ -180,7 +178,7 @@ def cache_hit(path):
     return return_val
 
 
-def read(path):
+def cache_read(path):
     if path in cache:
         valid = True
         return_val = cache_hit(path)
@@ -206,11 +204,11 @@ def read(path):
     return {'result': 'success'} if valid else {'error': return_val}
 
 
-def create(path):
-    return read(path)
+def cache_create(path):
+    return cache_read(path)
 
 
-def head(path=None, options=None):
+def cache_head(path=None, options=None):
     telemetry_path = os.path.join(os.getcwd(), '') if path is None else os.path.join(path, '')  # trailing slash
     telemetry_recursive_option = False if options is None else True
     return_val = {}
@@ -227,49 +225,6 @@ def head(path=None, options=None):
     for filename in glob.iglob(telemetry_path + '**', recursive=telemetry_recursive_option):
         telemetry.append(filename)
     return_val['telemetry'] = telemetry
-    return return_val
-
-
-def cache_api(function, kwargs):
-    path = kwargs.get('path')
-    options = kwargs.get('options')
-    if function in ['read', 'create', 'delete']:
-        valid, return_val = validate_file_extension(path)
-        if valid:
-            return_val = globals()[function](path)
-        else:
-            print(f'invalid path {path} ')
-    elif function in ['head']:
-        return_val = globals()[function](path, options)
-    elif function in ['function_register']:
-        return_val = globals()[function](path)
-    return return_val
-
-
-def my_api(function, args, kwargs):
-    full_module_name = 'function.' + function
-    # todo: timeit
-    return_val = False
-    try:
-        module = importlib.import_module(full_module_name)
-        function_ref = getattr(module, 'main')
-        return_val = function_ref(cache, *args, **kwargs)
-    except Exception as e:
-        print(f'function not found: {function=} {e}')
-
-    return return_val
-
-
-def function_router(function, *args, **kwargs):
-    print(f'===> {function=} {args=} {kwargs=}')
-    if DEBUG: print(f'beginning {cache.keys()=}')
-    if function in ['read', 'create', 'delete', 'head', 'function_register']:
-        return_val = cache_api(function, kwargs)
-    else:
-        return_val = my_api(function, args, kwargs)
-    if DEBUG: print(f'ending {cache.keys()=}')
-    print(f'<=== {return_val=}')
-    print(f'')
     return return_val
 
 
@@ -290,6 +245,49 @@ def function_register(path):
     return get_function_from_remote_file(path)
 
 
+def builtin_functions(function, kwargs):
+    path = kwargs.get('path')
+    options = kwargs.get('options')
+    if function in ['cache_read', 'cache_create', 'cache_delete']:
+        valid, return_val = validate_file_extension(path)
+        if valid:
+            return_val = globals()[function](path)
+        else:
+            print(f'invalid path {path} ')
+    elif function in ['cache_head']:
+        return_val = globals()[function](path, options)
+    elif function in ['function_register']:
+        return_val = globals()[function](path)
+    return return_val
+
+
+def custom_functions(function, args, kwargs):
+    full_module_name = 'function.' + function
+    # todo: timeit
+    return_val = False
+    try:
+        module = importlib.import_module(full_module_name)
+        function_ref = getattr(module, 'main')
+        return_val = function_ref(cache, *args, **kwargs)
+    except Exception as e:
+        print(f'function not found: {function=} {e}')
+
+    return return_val
+
+
+def function_router(function, *args, **kwargs):
+    print(f'===> {function=} {args=} {kwargs=}')
+    if DEBUG: print(f'beginning {cache.keys()=}')
+    if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_register']:
+        return_val = builtin_functions(function, kwargs)
+    else:
+        return_val = custom_functions(function, args, kwargs)
+    if DEBUG: print(f'ending {cache.keys()=}')
+    print(f'<=== {return_val=}')
+    print(f'')
+    return return_val
+
+
 dummy_content1 = {'foo': 'bar', 'foobar': 1}
 dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
@@ -299,12 +297,12 @@ if __name__ == '__main__':
 
     function_router('random_number', 1, stop=10)
     function_router('say_hello', 'hello world')
-    function_router('create', path='file1.snappy.parq')
-    function_router('create', path='file1.snappy.parquet')
-    function_router('read', path='file1.snappy.parquet')
-    function_router('cache_item_stats', 'file1.snappy.parquet')
-    function_router('delete', path='file1.snappy.parquet')
-    function_router('cache_snoop')
+    function_router('cache_create', path='file1.snappy.parq')
+    function_router('cache_create', path='file1.snappy.parquet')
+    function_router('cache_read', path='file1.snappy.parquet')
+    function_router('stats_cache_item', 'file1.snappy.parquet')
+    function_router('cache_delete', path='file1.snappy.parquet')
+    function_router('stats_cache')
     function_router('say_hello1', message='hello - I am not registered')
     function_router('function_register', path='say_hello1.py')
     function_router('say_hello1', message='hello - i am registered now')

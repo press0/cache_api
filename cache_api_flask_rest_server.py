@@ -23,7 +23,7 @@ class CacheAPI(Resource):
         print(f'{function=} {path=} {options=}')
         print(f'{message=} {start=} {stop=} {key=}')
         print('------')
-        if function in ['read', 'create', 'delete', 'head', 'function_register']:
+        if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_register']:
             return_value = cache_api.function_router(function=function, path=path, options=options)
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
@@ -32,12 +32,15 @@ class CacheAPI(Resource):
                 'value': fields.String
             }
         else:
+            return_value = None
             if function == 'random_number':
                 return_value = cache_api.function_router(function, start, stop)
             elif function in ['say_hello', 'say_hello1', 'say_hello2']:
                 return_value = cache_api.function_router(function, message)
-            elif function == 'cache_item_stats':
+            elif function == 'stats_cache_item':
                 return_value = cache_api.function_router(function, key)
+            elif function == 'stats_cache':
+                return_value = cache_api.function_router(function)
             cache_item = {'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),
