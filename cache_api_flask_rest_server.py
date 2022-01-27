@@ -35,7 +35,7 @@ class CacheAPI(Resource):
             return_value = None
             if function == 'random_number':
                 return_value = cache_api.function_router(function, start, stop)
-            elif function in ['say_hello', 'say_hello1', 'say_hello2']:
+            elif function in ['echo', 'echo1', 'echo2']:
                 return_value = cache_api.function_router(function, message)
             elif function == 'stats_cache_item':
                 return_value = cache_api.function_router(function, key)

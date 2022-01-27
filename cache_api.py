@@ -235,9 +235,9 @@ def function_register(path):
     #2 curl function=function_register, path=function_path
     #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
 
-    aws s3 cp ~/say_hello1.py  s3://{AWS_BUCKET_NAME}/json/say_hello2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_register\&path=say_hello2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=say_hello2\&message=hello_world
+    aws s3 cp ~/echo1.py  s3://{AWS_BUCKET_NAME}/json/echo2.py
+    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_register\&path=echo2.py
+    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=echo2\&message=hello_world
     """
 
     return get_function_from_remote_file(path)
@@ -298,13 +298,13 @@ if __name__ == '__main__':
     from local_config import *
 
     run(function='random_number', start=1, stop=10)
-    run(function='say_hello', message='hello world')
+    run(function='echo', message='hello world')
     run(function='cache_create', path='file1.snappy.parq')
     run(function='cache_create', path='file1.snappy.parquet')
     run(function='cache_read', path='file1.snappy.parquet')
     run(function='stats_cache_item', key='file1.snappy.parquet')
-    run(function='cache_delete', path='file1.snappy.parquet')
+    # run(function='cache_delete', path='file1.snappy.parquet')
     run(function='stats_cache')
-    run(function='say_hello1', message='hello - I am not registered')
-    run(function='function_register', path='say_hello1.py')
-    run(function='say_hello1', message='hello - i am registered now')
+    run(function='echo1', message='hello - I am not registered')
+    run(function='function_register', path='echo1.py')
+    run(function='echo1', message='hello - i am registered now')
