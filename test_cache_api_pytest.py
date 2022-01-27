@@ -1,6 +1,5 @@
 import cache_api as c
 import pandas as pd
-import pytest
 
 
 def test_random_number_function_in_range():
@@ -46,8 +45,7 @@ def test_stats_cache_item():
     assert False
 
 
-@pytest.mark.skip(reason="todo: delete cache entry not file")
 def test_stats_cache():
-    return_val = c.run(function='cache_delete', path='file1.snappy.parquet')
     return_val = c.run(function='stats_cache')
-    assert return_val == {'file1.json': 'success', 'file3.json': 'success'}.keys()
+    assert 'file1.json' in return_val
+    assert 'file3.json' in return_val
