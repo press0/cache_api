@@ -226,17 +226,17 @@ def cache_head(path=None, options=None):
     return return_val
 
 
-def function_register(path):
+def function_create(path):
     """
     :param path: remote path to python function to register
     :return success or failure
 
     #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}'
-    #2 curl function=function_register, path=function_path
+    #2 curl function=function_create, path=function_path
     #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
 
     aws s3 cp ~/echo1.py  s3://{AWS_BUCKET_NAME}/json/echo2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_register\&path=echo2.py
+    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_create\&path=echo2.py
     curl  http://127.0.0.1:5000/cache/api/v1.0/?function=echo2\&message=hello_world
     """
 
@@ -254,7 +254,7 @@ def builtin_functions(function, kwargs):
             print(f'invalid path {path} ')
     elif function in ['cache_head']:
         return_val = globals()[function](path, options)
-    elif function in ['function_register']:
+    elif function in ['function_create']:
         return_val = globals()[function](path)
     return return_val
 
@@ -276,7 +276,7 @@ def custom_functions(function, args, kwargs):
 def function_router(function, *args, **kwargs):
     print(f'===> {function=} {args=} {kwargs=}')
     if DEBUG: print(f'beginning {cache.keys()=}')
-    if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_register']:
+    if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
         return_val = builtin_functions(function, kwargs)
     else:
         return_val = custom_functions(function, args, kwargs)
@@ -306,5 +306,5 @@ if __name__ == '__main__':
     # run(function='cache_delete', path='file1.snappy.parquet')
     run(function='stats_cache')
     run(function='echo1', message='hello - I am not registered')
-    run(function='function_register', path='echo1.py')
+    run(function='function_create', path='echo1.py')
     run(function='echo1', message='hello - i am registered now')

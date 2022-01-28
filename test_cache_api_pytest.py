@@ -38,11 +38,7 @@ def test_cache_read():
 def test_stats_cache_item():
     c.run(function='cache_create', path='file1.snappy.parquet')
     return_val = c.run(function='stats_cache_item', key='file1.snappy.parquet')
-    for i in return_val:
-        if isinstance(i, pd.DataFrame):
-            assert True
-            return
-    assert False
+    assert return_val.startswith("<class 'pandas.core.frame.DataFrame'>")
 
 
 def test_stats_cache():

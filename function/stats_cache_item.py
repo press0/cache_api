@@ -25,4 +25,4 @@ def main(cache, key):
         item.info()
         sys.stdout = old_stdout
         item_stats = my_stdout.getvalue()
-        return item, item_stats
+        return item_stats #+ item.to_json()

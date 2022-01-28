@@ -23,7 +23,7 @@ class CacheAPI(Resource):
         print(f'{function=} {path=} {options=}')
         print(f'{message=} {start=} {stop=} {key=}')
         print('------')
-        if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_register']:
+        if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
             return_value = cache_api.function_router(function=function, path=path, options=options)
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
