@@ -52,12 +52,20 @@ def test_stats_cache():
 def test_function_create_and_invoke():
     # assemble
     function_name = 'test' + str(random.randint(10, 20))
-    test_local_python_function_file = sut.LOCAL_FUNCTION_DIR + function_name + '.py'
-    quoted_function_body = 'def%20main%28cache%2C%20q%2C%20w%29%3A%0A%20%20%20x%3D2%0A%20%20%20return%20q'
-    function_body = urllib.parse.unquote(quoted_function_body)
+    sut_function_file = sut.LOCAL_FUNCTION_DIR + function_name + '.py'
+
+    template_file = sut.LOCAL_FUNCTION_DIR + 'test.py'
+    print(f'{template_file=}')
+    template_file_content = open(template_file, "r")
+    print(f'{template_file_content=}')
+    quoted_function_body = template_file_content.read()
+    template_file_content.close()
+
+    #quoted_function_body = 'def%20main%28cache%2C%20q%2C%20w%29%3A%0A%20%20%20x%3D2%0A%20%20%20return%20q'
+    unquoted_function_body = urllib.parse.unquote(quoted_function_body)
 
     # act
-    result_val = sut.run(function='function_create', function_name=function_name, function_body=function_body)
+    result_val = sut.run(function='function_create', function_name=function_name, function_body=unquoted_function_body)
 
     # assert
     assert result_val
@@ -68,8 +76,8 @@ def test_function_create_and_invoke():
     # assert
     assert result_val == 'q says hello'
 
-    if os.path.exists(test_local_python_function_file):
-        os.remove(test_local_python_function_file)
+    if os.path.exists(sut_function_file):
+        os.remove(sut_function_file)
 
     # act
     result_val = sut.run(function='test123', q='q says hello', w='w says hello')
