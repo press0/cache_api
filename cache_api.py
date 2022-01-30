@@ -314,7 +314,9 @@ dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
 
 if __name__ == '__main__':
-    from local_config import *
+    AWS_DATA_DIR = 'json/'
+    AWS_BUCKET_NAME = 'press0-test'
+    AWS_FUNCTION_DIR = 'json/'
 
     run(function='random_number', start=1, stop=10)
     run(function='echo', message='hello world')

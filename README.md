@@ -4,7 +4,7 @@
 
 
 
-![cache_api](cache_api.png?raw=true "cache_api" )
+![cache_api](image/cache_api.png?raw=true "cache_api" )
 
 ### nomenclature
 ``````
@@ -116,7 +116,7 @@ parameter parameter_name=parameter_value
 
 ### use case
 
-![use case](cache-usecase-diagram.png?raw=true "cache_api" )
+![use case](image/cache-usecase-diagram.png?raw=true "cache_api" )
 
 
 ### roadmap cache futures
