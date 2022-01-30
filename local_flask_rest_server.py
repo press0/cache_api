@@ -1,4 +1,5 @@
 import cache_api
+import urllib
 
 from flask import Flask, request
 from flask_restful import Api, Resource, reqparse, fields, marshal
@@ -7,6 +8,9 @@ app = Flask(__name__, static_url_path="")
 api = Api(app)
 
 
+'''
+cannot handle new functions 
+'''
 class CacheAPI(Resource):
     def __init__(self):
         super(CacheAPI, self).__init__()
@@ -15,16 +19,22 @@ class CacheAPI(Resource):
         function = request.args.get('function', 'read')
         path = request.args.get('path', None)
         options = request.args.get('options', None)
-        message = request.args.get('message', "hello world")
+        message = request.args.get('message', None)
         start = int(request.args.get('start', 1))
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
+        function_name = request.args.get('function_name', 'None')
+        function_body_1 = request.args.get('function_body', 'None')
+        function_body = urllib.parse.unquote(function_body_1)
         print('------')
-        print(f'{function=} {path=} {options=}')
-        print(f'{message=} {start=} {stop=} {key=}')
+        print(f'{function=} {path=} {function_name=}')
+        print(f'{options=} {message=} {start=} {stop=} {key=}')
+        print(f'{function_body_1=}')
+        print(f'{function_body=}')
         print('------')
         if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
-            return_value = cache_api.function_router(function=function, path=path, options=options)
+            return_value = cache_api.function_router(function=function, path=path, options=options,
+                                                     function_name=function_name, function_body=function_body)
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),

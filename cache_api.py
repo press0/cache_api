@@ -8,6 +8,8 @@ import timeit
 import pandas as pd
 from pathlib import Path
 import importlib
+import urllib
+import random
 
 DEBUG = False
 LOCAL_DATA_DIR = 'data/'
@@ -226,26 +228,8 @@ def cache_head(path=None, options=None):
     return return_val
 
 
-def function_create(path):
-    """
-    :param path: remote path to python function to register
-    :return success or failure
-
-    #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}'
-    #2 curl function=function_create, path=function_path
-    #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
-
-    aws s3 cp ~/echo1.py  s3://{AWS_BUCKET_NAME}/json/echo2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_create\&path=echo2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=echo2\&message=hello_world
-    """
-
-    return get_function_from_remote_file(path)
-
-
 def builtin_functions(function, kwargs):
     path = kwargs.get('path')
-    options = kwargs.get('options')
     if function in ['cache_read', 'cache_create', 'cache_delete']:
         valid, return_val = validate_file_extension(path)
         if valid:
@@ -253,9 +237,14 @@ def builtin_functions(function, kwargs):
         else:
             print(f'invalid path {path} ')
     elif function in ['cache_head']:
+        options = kwargs.get('options')
         return_val = globals()[function](path, options)
-    elif function in ['function_create']:
+    elif function in ['xxxfunction_create']:
         return_val = globals()[function](path)
+    elif function in ['function_create']:
+        function_name = kwargs.get('function_name')
+        function_body = kwargs.get('function_body')
+        return_val = globals()[function](function_name, function_body)
     return return_val
 
 
@@ -290,6 +279,36 @@ def run(function, *args, **kwargs):
     return function_router(function, *args, **kwargs)
 
 
+def xxxfunction_create(path):
+    """
+    :param path: remote path to python function to register
+    :return success or failure
+
+    #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}'
+    #2 curl function=function_create, path=function_path
+    #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
+
+    aws s3 cp ~/echo1.py  s3://{AWS_BUCKET_NAME}/json/echo2.py
+    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_create\&path=echo2.py
+    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=echo2\&message=hello_world
+    """
+
+    return get_function_from_remote_file(path)
+
+
+def function_create(function_name, function_body):
+    print(f'{function_name=} {function_body=}')
+
+    try:
+        compile(function_body, f'{function_name}.py', 'exec')
+    except Exception as e:
+        print(f'compile error {function_body=} {function_name=} {e=}')
+        return False
+    with open(LOCAL_FUNCTION_DIR + f'{function_name}.py', 'w') as file:
+        file.write(function_body)
+    return True
+
+
 dummy_content1 = {'foo': 'bar', 'foobar': 1}
 dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
@@ -303,8 +322,17 @@ if __name__ == '__main__':
     run(function='cache_create', path='file1.snappy.parquet')
     run(function='cache_read', path='file1.snappy.parquet')
     run(function='stats_cache_item', key='file1.snappy.parquet')
-    # run(function='cache_delete', path='file1.snappy.parquet')
     run(function='stats_cache')
-    run(function='echo1', message='hello - I am not registered')
-    run(function='function_create', path='echo1.py')
-    run(function='echo1', message='hello - i am registered now')
+    #### run(function='cache_delete', path='file1.snappy.parquet')
+    function_name = 'test' + str(random.randint(10, 20))
+    test_local_python_function_file = LOCAL_FUNCTION_DIR + function_name + '.py'
+    quoted_function_body = 'def%20main%28cache%2C%20q%2C%20w%29%3A%0A%20%20%20x%3D2%0A%20%20%20return%20q'
+    function_body = urllib.parse.unquote(quoted_function_body)
+    run(function='function_create', function_name=function_name, function_body=function_body)
+    result_val = run(function='test', q='q says hello', w='w says hello')
+    assert result_val == 'q says hello'
+    if os.path.exists(test_local_python_function_file):
+        os.remove(test_local_python_function_file)
+    result_val = run(function='test123', q='q says hello', w='w says hello')
+    assert not result_val
+
