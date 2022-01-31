@@ -11,17 +11,17 @@ if __name__ == "__main__":
     print(f'{cli_input=}')
 
     if cli_input['function'] == 'function_create':
-        function_file = cli_input["function_file"]
+        function_file_name = cli_input["function_file"]
+        print(f'{function_file_name=}')
+        function_file = open(function_file_name, "r")
         print(f'{function_file=}')
-        function_file_open = open(function_file, "r")
-        print(f'{function_file_open=}')
-        function_file_data = function_file_open.read()
-        function_file_open.close()
-        function_file_data_quoted = requests.utils.quote(function_file_data)
+        function_file_data = function_file.read()
+        function_file.close()
+        function_body = requests.utils.quote(function_file_data)
         print(f'{function_file_data=}')
-        print(f'{function_file_data_quoted=}')
+        print(f'{function_body=}')
         cli_input.pop('function_file')
-        cli_input['function_body'] = function_file_data_quoted
+        cli_input['function_body'] = function_body
         print(f'{cli_input=}')
 
     response = requests.get(endpoint, params=cli_input)
@@ -34,3 +34,8 @@ if __name__ == "__main__":
 
 # todo: add cache param
 # todo: compile(code_str, 'test.py', 'exec')
+
+# examples
+# '{ "function":"function_create", "function_name":"test2", "function_file":"function/test.py" } '
+# '{ "function":"function_create", "function_name":"test3", "function_file":"function/test.py" } '
+# '{ "function":"echo", "message":"hello" } '
