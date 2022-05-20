@@ -15,6 +15,7 @@ pyarrow
 python-dateutil 
 python-dotenv   
 pytz            
+requests
 s3transfer      
 setuptools      
 six             

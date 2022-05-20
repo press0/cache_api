@@ -1,10 +1,19 @@
-# cache api
+# data api
 
-[Cache-Aside](https://docs.microsoft.com/en-us/azure/architecture/patterns/cache-aside) AWS resource service 
-
+An in-memory key-value cache that follows the  
+[Cache-Aside](https://docs.microsoft.com/en-us/azure/architecture/patterns/cache-aside)
+caching model and also persists to local disk.  
+Value types supported:
+Pandas DataFrames, Json, Collections.
+Deploys to AWS, containers, and local workstations. 
 
 
 ![cache_api](image/cache_api.png?raw=true "cache_api" )
+
+
+# function api
+
+
 
 ### nomenclature
 ``````
@@ -23,7 +32,7 @@ AWS ACCESS KEYS  # System of Record AWS IAM keys
 
 ### run api server
 ``````
-python cache_api_flask_rest_server.py
+python local_flask_rest_server.py
 ``````
 
 ### create cache from s3 objects
