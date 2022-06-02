@@ -3,6 +3,7 @@
 .flaskenv
 
 data
+data_fake_remote
 
 venv
 z*/

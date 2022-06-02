@@ -1,6 +1,7 @@
 import json
 import os
 import os.path
+import shutil
 import sys
 import glob
 
@@ -18,9 +19,12 @@ DEBUG = False
 LOCAL_DATA_DIR = os.getenv('LOCAL_DATA_DIR', 'data/')
 LOCAL_FUNCTION_DIR = os.getenv('LOCAL_FUNCTION_DIR', 'function/')
 
+REMOTE_S_DRIVE = os.getenv('REMOTE_S_DRIVE', './data_fake_remote/')
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
 AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_FUNCTION_DIR = os.getenv('AWS_FUNCTION_DIR')
+
+assert len(REMOTE_S_DRIVE) != 0
 assert len(AWS_BUCKET_NAME) != 0
 assert len(AWS_DATA_DIR) != 0
 assert len(AWS_FUNCTION_DIR) != 0
@@ -51,9 +55,9 @@ def get_cache_item_from_remote_file(path, source):
     destination = get_key(path, source)
     make_deep_directory(destination)
 
-    if source == Source.S3.name:
+    if source == Source.s3.name:
         return get_cache_item_from_remote_file_s3(path, source)
-    elif source == Source.SD.name:
+    elif source == Source.sd.name:
         return get_cache_item_from_remote_file_sd(path, source)
     else:
         print(f'{source=} is not supported')
@@ -61,7 +65,16 @@ def get_cache_item_from_remote_file(path, source):
 
 
 def get_cache_item_from_remote_file_sd(path, source):
-    print(f'source SD is in progress')
+    destination = get_key(path, source)
+    start_time = timeit.default_timer()
+    print(f'copy remote {REMOTE_S_DRIVE + path} to local {destination}')
+    try:
+        shutil.copy(REMOTE_S_DRIVE + path, get_key(path, source))
+        print(f'received from S drive: {destination} {access_time(start_time)}')
+        return get_cache_item_from_local_file(destination)
+    except Exception as e:
+        print(f'exception {e}')
+        return None
 
 
 def get_cache_item_from_remote_file_s3(path, source):
@@ -74,12 +87,10 @@ def get_cache_item_from_remote_file_s3(path, source):
                           )
         print(f'copy s3://{AWS_BUCKET_NAME}/{AWS_DATA_DIR}{path} to local file {destination}')
         s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + path, destination)
-        print(f'cache updated from S3: {AWS_DATA_DIR}{path} {access_time(start_time)}')
-
+        print(f'received from s3: {destination} {access_time(start_time)}')
         return get_cache_item_from_local_file(destination)
     except Exception as e:
         print(f'exception {e}')
-        print(f'S3 object not found {AWS_DATA_DIR}{path} {access_time(start_time)}')
         return None
 
 
@@ -164,7 +175,7 @@ def debug(valid, return_val):
 
 def cache_delete(kwargs):
     path = kwargs.get('path')
-    source = kwargs.get('source', Source['S3'].name)
+    source = kwargs.get('source', Source['s3'].name)
     destination = get_key(path, source)
     if destination in cache:
         valid, return_val = evict_cache_entry(destination)
@@ -177,13 +188,6 @@ def cache_delete(kwargs):
     return return_val if valid else {'error': return_val}
 
 
-def cache_hit(path):
-    start_time = timeit.default_timer()
-    return_val = cache.get(path)
-    print('cache hit, key:' + f'{path}, time: {access_time(start_time)} ')
-    return return_val
-
-
 def access_time(start_time):
     data_access_time = timeit.default_timer() - start_time
     format_float = "{:.12f}".format(data_access_time)
@@ -192,32 +196,33 @@ def access_time(start_time):
 
 
 class Source(Enum):
-    S3 = 1
-    SD = 2
+    s3 = 1
+    sd = 2
 
 
 def cache_read(kwargs):
     path = kwargs.get('path')
-    source = kwargs.get('source', Source['S3'].name)
+    source = kwargs.get('source', Source['s3'].name)
     destination = get_key(path, source)
     start_time = timeit.default_timer()
     cache_option = kwargs.get('cache_option', True)
 
-    if source not in [Source.S3.name]:
+    if source not in [Source.s3.name, Source.sd.name]:
         return_val = {'error': f'{source=} is not supported'}
         print(return_val)
         return return_val
 
-    if path in cache:
+    if destination in cache:
         valid = True
-        return_val = cache_hit(path)
+        return_val = cache.get(destination)
+        print('cache hit, key:' + f'{destination}, time: {access_time(start_time)} ')
     else:
         cache_item = get_cache_item_from_local_file(destination)
         if cache_item is not None:
             cache.update(cache_item)
             valid = True
-            return_val = cache.get(path)
-            print(f'cache updated from local, key: {destination} {access_time(start_time)}')
+            return_val = cache.get(destination)
+            print(f'cache updated from local file, key: {destination} {access_time(start_time)}')
         else:
             cache_item = get_cache_item_from_remote_file(path, source)
             if cache_item is not None:
@@ -226,7 +231,7 @@ def cache_read(kwargs):
                 return_val = cache.get(path)
             else:
                 valid = False
-                return_val = 'S3 object not found ' + f'{AWS_DATA_DIR + path}'
+                return_val = 'Error: ' + f'{AWS_DATA_DIR + path}'
     debug(valid, return_val)
     return {'result': 'success'} if valid else {'error': return_val}
 
