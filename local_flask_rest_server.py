@@ -1,11 +1,15 @@
+from dotenv import load_dotenv
+load_dotenv()
 import cache_api
 import urllib
 
 from flask import Flask, request
-from flask_restful import Api, Resource, reqparse, fields, marshal
+from flask_restful import Api, Resource, fields, marshal
 
 app = Flask(__name__, static_url_path="")
 api = Api(app)
+DEBUG = False
+
 
 
 '''
@@ -23,18 +27,18 @@ class CacheAPI(Resource):
         start = int(request.args.get('start', 1))
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
-        function_name = request.args.get('function_name', 'None')
-        function_body_1 = request.args.get('function_body', 'None')
-        function_body = urllib.parse.unquote(function_body_1)
-        print('------')
-        print(f'{function=} {path=} {function_name=}')
-        print(f'{options=} {message=} {start=} {stop=} {key=}')
-        print(f'{function_body_1=}')
-        print(f'{function_body=}')
-        print('------')
+        if DEBUG:
+            function_name = request.args.get('function_name', 'None')
+            function_body_1 = request.args.get('function_body', 'None')
+            function_body = urllib.parse.unquote(function_body_1)
+            print('------')
+            print(f'{function=} {path=} {function_name=}')
+            print(f'{options=} {message=} {start=} {stop=} {key=}')
+            print(f'{function_body_1=}')
+            print(f'{function_body=}')
+            print('------')
         if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
-            return_value = cache_api.function_router(function=function, path=path, options=options,
-                                                     function_name=function_name, function_body=function_body)
+            return_value = cache_api.function_router(**request.args)
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),

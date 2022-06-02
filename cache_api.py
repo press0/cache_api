@@ -3,6 +3,7 @@ import os
 import os.path
 import sys
 import glob
+
 import boto3
 import timeit
 import pandas as pd
@@ -10,18 +11,23 @@ from pathlib import Path
 import importlib
 import urllib
 import random
+from enum import Enum
 
 DEBUG = False
-LOCAL_DATA_DIR = 'data/'
-LOCAL_FUNCTION_DIR = 'function/'
 
-AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
+LOCAL_DATA_DIR = os.getenv('LOCAL_DATA_DIR', 'data/')
+LOCAL_FUNCTION_DIR = os.getenv('LOCAL_FUNCTION_DIR', 'function/')
+
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
+AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_FUNCTION_DIR = os.getenv('AWS_FUNCTION_DIR')
+assert len(AWS_BUCKET_NAME) != 0
+assert len(AWS_DATA_DIR) != 0
+assert len(AWS_FUNCTION_DIR) != 0
 
 
-def make_deep_directory(base_directory, string_path):
-    path = Path(base_directory + '/' + string_path)
+def make_deep_directory(string_path):
+    path = Path(string_path)
     parent = Path(path).parent
 
     if DEBUG:
@@ -41,65 +47,66 @@ def make_deep_directory(base_directory, string_path):
         print(f'{parent.exists()=}')
 
 
-def get_cache_item_from_remote_file(path):
-    make_deep_directory(LOCAL_DATA_DIR, path)
-    try:
-        s3 = boto3.client('s3',
-                          aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-                          aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
-                          )
-        print('copy remote object s3://' +
-              f'{AWS_BUCKET_NAME + "/" + AWS_DATA_DIR + path}' +
-              ' to local file ' + f'{LOCAL_DATA_DIR + path}')
+def get_cache_item_from_remote_file(path, source):
+    destination = get_key(path, source)
+    make_deep_directory(destination)
 
-        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + path, LOCAL_DATA_DIR + path)
-
-        return get_cache_item_from_local_file(path)
-    except Exception as e:
-        print(f'local file not found {path} {e}')
+    if source == Source.S3.name:
+        return get_cache_item_from_remote_file_s3(path, source)
+    elif source == Source.SD.name:
+        return get_cache_item_from_remote_file_sd(path, source)
+    else:
+        print(f'{source=} is not supported')
         return None
 
 
-def get_function_from_remote_file(path):
-    make_deep_directory(LOCAL_FUNCTION_DIR, path)
+def get_cache_item_from_remote_file_sd(path, source):
+    print(f'source SD is in progress')
+
+
+def get_cache_item_from_remote_file_s3(path, source):
+    destination = get_key(path, source)
+    start_time = timeit.default_timer()
     try:
         s3 = boto3.client('s3',
                           aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
                           aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY')
                           )
-        print('copy remote object s3://' +
-              f'{AWS_BUCKET_NAME + "/" + AWS_FUNCTION_DIR + path}' +
-              ' to local file ' + f'{LOCAL_FUNCTION_DIR + path}')
+        print(f'copy s3://{AWS_BUCKET_NAME}/{AWS_DATA_DIR}{path} to local file {destination}')
+        s3.download_file(AWS_BUCKET_NAME, AWS_DATA_DIR + path, destination)
+        print(f'cache updated from S3: {AWS_DATA_DIR}{path} {access_time(start_time)}')
 
-        s3.download_file(AWS_BUCKET_NAME, AWS_FUNCTION_DIR + path, LOCAL_FUNCTION_DIR + path)
-
-        return True
+        return get_cache_item_from_local_file(destination)
     except Exception as e:
-        print(f'local file not found {path} {e}')
-        return False
+        print(f'exception {e}')
+        print(f'S3 object not found {AWS_DATA_DIR}{path} {access_time(start_time)}')
+        return None
 
 
-def get_cache_item_from_local_file(path):
-    """ :param path: relative path including file name under LOCAL_DATA_DIR """
-    file_extension = Path(path).suffix
+def get_key(path, source):
+    return f'{LOCAL_DATA_DIR}{source}/{path}'
+
+
+def get_cache_item_from_local_file(destination):
+    file_extension = Path(destination).suffix
     # todo: size, date
 
     if file_extension == '.json':
         try:
-            f = open(LOCAL_DATA_DIR + path)
+            f = open(destination)
             file_content = json.load(f)
-            cache_entry = {path: file_content}
+            cache_entry = {destination: file_content}
             return cache_entry
         except Exception as e:
-            print(f'local file not found {path}')
+            print(f'local {file_extension} file not found {destination}')
             return None
     elif file_extension == '.parquet':
         try:
-            file_content = pd.read_parquet(LOCAL_DATA_DIR + path, engine='pyarrow')
-            cache_entry = {path: file_content}
+            file_content = pd.read_parquet(destination, engine='pyarrow')
+            cache_entry = {destination: file_content}
             return cache_entry
         except Exception as e:
-            print(f'local file not found {path} {e}')
+            print(f'local {file_extension} file not found {destination}')
             return None
 
 
@@ -111,38 +118,30 @@ def validate_file_extension(path):
         file_extension = Path(path).suffix
         if file_extension not in ['.json', '.parquet']:
             valid = False
-            return_val = {'exception': f'file type {file_extension} not yet supported'}
+            return_val = {'exception': f'file type {file_extension} not supported'}
         else:
             valid = True
             return_val = None
     return valid, return_val
 
 
-def validate_file_exists(path):
-    if os.path.isfile(LOCAL_DATA_DIR + path):
+def validate_file_exists(destination):
+    if os.path.isfile(destination):
         return True, None
     else:
-        return False, f'file does not exist {LOCAL_DATA_DIR + path}'
+        return False, f'file does not exist {destination}'
 
 
-def delete_file(path):
-    try:
-        os.remove(LOCAL_DATA_DIR + path)
-        return True, None
-    except OSError as e:
-        return False, f'error deleting file {LOCAL_DATA_DIR + path} {e}'
-
-
-def evict_cache_entry(path):
-    del cache[path]
-    print(f'cache entry evicted {path}')
-    valid, return_val = validate_file_exists(path)
+def evict_cache_entry(destination):
+    del cache[destination]
+    print(f'cache entry evicted {destination}')
+    valid, return_val = validate_file_exists(destination)
     if valid:
-        valid, return_val = delete_file(path)
+        valid, return_val = delete_file(destination)
         if valid:
-            print(f'file deleted {path}')
+            print(f'file deleted {destination}')
         else:
-            print(f'file not deleted {path} {return_val}')
+            print(f'file not deleted {destination} {return_val}')
     else:
         print(f'{return_val}')
         return valid, return_val
@@ -150,19 +149,30 @@ def evict_cache_entry(path):
     return valid, return_val
 
 
+def delete_file(destination):
+    try:
+        os.remove(destination)
+        return True, None
+    except OSError as e:
+        return False, f'error deleting file {destination} {e}'
+
+
 def debug(valid, return_val):
     if DEBUG:
         print(f'valid:{valid} return_val:{return_val}')
 
 
-def cache_delete(path):
-    if path in cache:
-        valid, return_val = evict_cache_entry(path)
+def cache_delete(kwargs):
+    path = kwargs.get('path')
+    source = kwargs.get('source', Source['S3'].name)
+    destination = get_key(path, source)
+    if destination in cache:
+        valid, return_val = evict_cache_entry(destination)
     else:
         valid = False
         return_val = 'cache_item not found'
     if valid:
-        return_val = {'cache_item deleted': path}
+        return_val = {'cache_item deleted': destination}
         debug(valid, return_val)
     return return_val if valid else {'error': return_val}
 
@@ -170,36 +180,53 @@ def cache_delete(path):
 def cache_hit(path):
     start_time = timeit.default_timer()
     return_val = cache.get(path)
-    data_access_time = timeit.default_timer() - start_time
-    format_float = "{:.12f}".format(data_access_time)
-    expo_number = "{:e}".format(data_access_time)
-    access_time = f'{format_float} seconds ({expo_number})'
-    print('cache hit, key:' + f'{path}, time: {access_time} ')
+    print('cache hit, key:' + f'{path}, time: {access_time(start_time)} ')
     return return_val
 
 
-def cache_read(path):
+def access_time(start_time):
+    data_access_time = timeit.default_timer() - start_time
+    format_float = "{:.12f}".format(data_access_time)
+    expo_number = "{:e}".format(data_access_time)
+    return f'{format_float} seconds ({expo_number})'
+
+
+class Source(Enum):
+    S3 = 1
+    SD = 2
+
+
+def cache_read(kwargs):
+    path = kwargs.get('path')
+    source = kwargs.get('source', Source['S3'].name)
+    destination = get_key(path, source)
+    start_time = timeit.default_timer()
+    cache_option = kwargs.get('cache_option', True)
+
+    if source not in [Source.S3.name]:
+        return_val = {'error': f'{source=} is not supported'}
+        print(return_val)
+        return return_val
+
     if path in cache:
         valid = True
         return_val = cache_hit(path)
     else:
-        cache_item = get_cache_item_from_local_file(path)
+        cache_item = get_cache_item_from_local_file(destination)
         if cache_item is not None:
             cache.update(cache_item)
             valid = True
             return_val = cache.get(path)
-            print('cache update from local, key:' + f'{LOCAL_DATA_DIR + path}')
+            print(f'cache updated from local, key: {destination} {access_time(start_time)}')
         else:
-            cache_item = get_cache_item_from_remote_file(path)
+            cache_item = get_cache_item_from_remote_file(path, source)
             if cache_item is not None:
                 cache.update(cache_item)
                 valid = True
                 return_val = cache.get(path)
-                print('cache update from remote, key:' + f'{AWS_DATA_DIR + path}')
             else:
                 valid = False
-                return_val = 'remote file not found ' + f'{AWS_DATA_DIR + path}'
-                print(return_val)
+                return_val = 'S3 object not found ' + f'{AWS_DATA_DIR + path}'
     debug(valid, return_val)
     return {'result': 'success'} if valid else {'error': return_val}
 
@@ -228,12 +255,13 @@ def cache_head(path=None, options=None):
     return return_val
 
 
-def builtin_functions(function, kwargs):
+def builtin_functions(kwargs):
+    function = kwargs.get('function')
     path = kwargs.get('path')
     if function in ['cache_read', 'cache_create', 'cache_delete']:
         valid, return_val = validate_file_extension(path)
         if valid:
-            return_val = globals()[function](path)
+            return_val = globals()[function](kwargs)
         else:
             print(f'invalid path {path} ')
     elif function in ['cache_head']:
@@ -262,11 +290,12 @@ def custom_functions(function, args, kwargs):
     return return_val
 
 
-def function_router(function, *args, **kwargs):
+def function_router(*args, **kwargs):
+    function = kwargs.get('function')
     print(f'===> {function=} {args=} {kwargs=}')
     if DEBUG: print(f'beginning {cache.keys()=}')
     if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
-        return_val = builtin_functions(function, kwargs)
+        return_val = builtin_functions(kwargs)
     else:
         return_val = custom_functions(function, args, kwargs)
     if DEBUG: print(f'ending {cache.keys()=}')
@@ -277,23 +306,6 @@ def function_router(function, *args, **kwargs):
 
 def run(function, *args, **kwargs):
     return function_router(function, *args, **kwargs)
-
-
-def xxxfunction_create(path):
-    """
-    :param path: remote path to python function to register
-    :return success or failure
-
-    #1 aws s3 cp function_path f's3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}'
-    #2 curl function=function_create, path=function_path
-    #3 this function - aws s3 cp s3://{AWS_BUCKET_NAME}/{AWS_FUNCTION_DIR}{path}
-
-    aws s3 cp ~/echo1.py  s3://{AWS_BUCKET_NAME}/json/echo2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=function_create\&path=echo2.py
-    curl  http://127.0.0.1:5000/cache/api/v1.0/?function=echo2\&message=hello_world
-    """
-
-    return get_function_from_remote_file(path)
 
 
 def function_create(function_name, function_body):
@@ -337,4 +349,3 @@ if __name__ == '__main__':
         os.remove(test_local_python_function_file)
     result_val = run(function='test123', q='q says hello', w='w says hello')
     assert not result_val
-
