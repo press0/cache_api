@@ -30,6 +30,12 @@ assert len(AWS_DATA_DIR) != 0
 assert len(AWS_FUNCTION_DIR) != 0
 
 
+class Source(Enum):
+    s3 = 1
+    sd = 2
+    bin = 3
+
+
 def make_deep_directory(string_path):
     path = Path(string_path)
     parent = Path(path).parent
@@ -100,7 +106,6 @@ def get_key(path, source):
 
 def get_cache_item_from_local_file(destination):
     file_extension = Path(destination).suffix
-    # todo: size, date
 
     if file_extension == '.json':
         try:
@@ -109,7 +114,7 @@ def get_cache_item_from_local_file(destination):
             cache_entry = {destination: file_content}
             return cache_entry
         except Exception as e:
-            print(f'local {file_extension} file not found {destination}')
+            print(f'exception {e}')
             return None
     elif file_extension == '.parquet':
         try:
@@ -117,7 +122,16 @@ def get_cache_item_from_local_file(destination):
             cache_entry = {destination: file_content}
             return cache_entry
         except Exception as e:
-            print(f'local {file_extension} file not found {destination}')
+            print(f'exception {e}')
+            return None
+    elif file_extension == '.bin':
+        try:
+            with open(destination, mode='rb') as file:
+                file_content = file.read()
+                cache_entry = {destination: file_content}
+                return cache_entry
+        except Exception as e:
+            print(f'exception {e}')
             return None
 
 
@@ -126,13 +140,8 @@ def validate_file_extension(path):
         valid = False
         return_val = {'exception': f'bad path {path}'}
     else:
-        file_extension = Path(path).suffix
-        if file_extension not in ['.json', '.parquet']:
-            valid = False
-            return_val = {'exception': f'file type {file_extension} not supported'}
-        else:
-            valid = True
-            return_val = None
+        valid = True
+        return_val = None
     return valid, return_val
 
 
@@ -195,11 +204,6 @@ def access_time(start_time):
     return f'{format_float} seconds ({expo_number})'
 
 
-class Source(Enum):
-    s3 = 1
-    sd = 2
-
-
 def cache_read(kwargs):
     path = kwargs.get('path')
     source = kwargs.get('source', Source['s3'].name)
@@ -207,7 +211,7 @@ def cache_read(kwargs):
     start_time = timeit.default_timer()
     cache_option = kwargs.get('cache_option', True)
 
-    if source not in [Source.s3.name, Source.sd.name]:
+    if source not in [Source.s3.name, Source.sd.name, Source.sd.bin]:
         return_val = {'error': f'{source=} is not supported'}
         print(return_val)
         return return_val
@@ -231,7 +235,7 @@ def cache_read(kwargs):
                 return_val = cache.get(path)
             else:
                 valid = False
-                return_val = 'Error: ' + f'{AWS_DATA_DIR + path}'
+                return_val = 'Error: ' + f'{destination}'
     debug(valid, return_val)
     return {'result': 'success'} if valid else {'error': return_val}
 
