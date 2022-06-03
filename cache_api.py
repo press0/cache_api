@@ -204,12 +204,25 @@ def access_time(start_time):
     return f'{format_float} seconds ({expo_number})'
 
 
-def cache_read(kwargs):
+def read(kwargs):
+    cache_read(kwargs)
     path = kwargs.get('path')
     source = kwargs.get('source', Source['s3'].name)
     destination = get_key(path, source)
+    return cache.get(destination)
+
+
+def to_bool(string_bool):
+    return True if string_bool == 'True' else False
+
+
+def cache_read(kwargs):
+    path = kwargs.get('path')
+    source = kwargs.get('source', Source['s3'].name)
+    cache_option = to_bool(kwargs.get('cache_option'))
+    time_option = to_bool(kwargs.get('time_option'))
+    destination = get_key(path, source)
     start_time = timeit.default_timer()
-    cache_option = kwargs.get('cache_option', True)
 
     if source not in [Source.s3.name, Source.sd.name, Source.sd.bin]:
         return_val = {'error': f'{source=} is not supported'}
@@ -232,12 +245,18 @@ def cache_read(kwargs):
             if cache_item is not None:
                 cache.update(cache_item)
                 valid = True
-                return_val = cache.get(path)
+                return_val = cache.get(destination)
             else:
                 valid = False
                 return_val = 'Error: ' + f'{destination}'
     debug(valid, return_val)
-    return {'result': 'success'} if valid else {'error': return_val}
+
+    if valid and time_option:
+        return_val = {'result': 'success ' + access_time(start_time)}
+    else:
+        return_val = {'result': 'success'}
+
+    return return_val if valid else {'error': return_val}
 
 
 def cache_create(path):
