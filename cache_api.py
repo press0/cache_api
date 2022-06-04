@@ -14,26 +14,37 @@ import urllib
 import random
 from enum import Enum
 
-DEBUG = False
+DEBUG = True
 
 LOCAL_DATA_DIR = os.getenv('LOCAL_DATA_DIR', 'data/')
 LOCAL_FUNCTION_DIR = os.getenv('LOCAL_FUNCTION_DIR', 'function/')
 
-REMOTE_S_DRIVE = os.getenv('REMOTE_S_DRIVE', './data_fake_remote/')
+REMOTE_STORAGE = os.getenv('REMOTE_STORAGE', './data_fake_remote/')
+
 AWS_BUCKET_NAME = os.getenv('AWS_BUCKET_NAME')
 AWS_DATA_DIR = os.getenv('AWS_DATA_DIR')
 AWS_FUNCTION_DIR = os.getenv('AWS_FUNCTION_DIR')
 
-assert len(REMOTE_S_DRIVE) != 0
-assert len(AWS_BUCKET_NAME) != 0
-assert len(AWS_DATA_DIR) != 0
-assert len(AWS_FUNCTION_DIR) != 0
+if __name__ != '__main__':
+    assert len(AWS_BUCKET_NAME) != 0
+    assert len(AWS_DATA_DIR) != 0
+    assert len(AWS_FUNCTION_DIR) != 0
 
 
-class Source(Enum):
+class StorageType(Enum):
     s3 = 1
     sd = 2
+
+
+class FileType(Enum):
+    json = 1
+    parquet = 2
     bin = 3
+
+
+class ReturnType(Enum):
+    meta = 1
+    data = 2
 
 
 def make_deep_directory(string_path):
@@ -57,25 +68,25 @@ def make_deep_directory(string_path):
         print(f'{parent.exists()=}')
 
 
-def get_cache_item_from_remote_file(path, source):
-    destination = get_key(path, source)
+def get_cache_item_from_remote_file(path, storage_type):
+    destination = get_key(path, storage_type)
     make_deep_directory(destination)
 
-    if source == Source.s3.name:
-        return get_cache_item_from_remote_file_s3(path, source)
-    elif source == Source.sd.name:
-        return get_cache_item_from_remote_file_sd(path, source)
+    if storage_type == StorageType.s3.name:
+        return get_cache_item_from_remote_file_s3(path, storage_type)
+    elif storage_type == StorageType.sd.name:
+        return get_cache_item_from_remote_file_sd(path, storage_type)
     else:
-        print(f'{source=} is not supported')
+        print(f'{storage_type=} is not supported')
         return None
 
 
-def get_cache_item_from_remote_file_sd(path, source):
-    destination = get_key(path, source)
+def get_cache_item_from_remote_file_sd(path, storage_type):
+    destination = get_key(path, storage_type)
     start_time = timeit.default_timer()
-    print(f'copy remote {REMOTE_S_DRIVE + path} to local {destination}')
+    print(f'copy remote {REMOTE_STORAGE + path} to local {destination}')
     try:
-        shutil.copy(REMOTE_S_DRIVE + path, get_key(path, source))
+        shutil.copy(REMOTE_STORAGE + path, destination)
         print(f'received from S drive: {destination} {access_time(start_time)}')
         return get_cache_item_from_local_file(destination)
     except Exception as e:
@@ -83,8 +94,8 @@ def get_cache_item_from_remote_file_sd(path, source):
         return None
 
 
-def get_cache_item_from_remote_file_s3(path, source):
-    destination = get_key(path, source)
+def get_cache_item_from_remote_file_s3(path, storage_type):
+    destination = get_key(path, storage_type)
     start_time = timeit.default_timer()
     try:
         s3 = boto3.client('s3',
@@ -100,14 +111,20 @@ def get_cache_item_from_remote_file_s3(path, source):
         return None
 
 
-def get_key(path, source):
-    return f'{LOCAL_DATA_DIR}{source}/{path}'
+def get_key(kwargs):
+    path = kwargs.get('path')
+    storage_type = kwargs.get('storage_type', StorageType['s3'].name)
+    return get_key(path, storage_type)
+
+
+def get_key(path, storage_type):
+    return f'{LOCAL_DATA_DIR}{storage_type}/{path}'
 
 
 def get_cache_item_from_local_file(destination):
-    file_extension = Path(destination).suffix
+    file_extension = Path(destination).suffix[1:]
 
-    if file_extension == '.json':
+    if file_extension == FileType.json.name:
         try:
             f = open(destination)
             file_content = json.load(f)
@@ -116,7 +133,7 @@ def get_cache_item_from_local_file(destination):
         except Exception as e:
             print(f'exception {e}')
             return None
-    elif file_extension == '.parquet':
+    elif file_extension == FileType.parquet.name:
         try:
             file_content = pd.read_parquet(destination, engine='pyarrow')
             cache_entry = {destination: file_content}
@@ -124,7 +141,7 @@ def get_cache_item_from_local_file(destination):
         except Exception as e:
             print(f'exception {e}')
             return None
-    elif file_extension == '.bin':
+    elif file_extension == FileType.bin.name:
         try:
             with open(destination, mode='rb') as file:
                 file_content = file.read()
@@ -184,8 +201,8 @@ def debug(valid, return_val):
 
 def cache_delete(kwargs):
     path = kwargs.get('path')
-    source = kwargs.get('source', Source['s3'].name)
-    destination = get_key(path, source)
+    storage_type = kwargs.get('storage_type', StorageType['s3'].name)
+    destination = get_key(path, storage_type)
     if destination in cache:
         valid, return_val = evict_cache_entry(destination)
     else:
@@ -206,57 +223,62 @@ def access_time(start_time):
 
 def read(kwargs):
     cache_read(kwargs)
-    path = kwargs.get('path')
-    source = kwargs.get('source', Source['s3'].name)
-    destination = get_key(path, source)
+    destination = get_key(kwargs)
     return cache.get(destination)
 
 
 def to_bool(string_bool):
-    return True if string_bool == 'True' else False
+    return True if string_bool.lower() == 'true' else False
 
 
 def cache_read(kwargs):
     path = kwargs.get('path')
-    source = kwargs.get('source', Source['s3'].name)
-    cache_option = to_bool(kwargs.get('cache_option'))
-    time_option = to_bool(kwargs.get('time_option'))
-    destination = get_key(path, source)
+    storage_type = kwargs.get('storage', StorageType['s3'].name)
+    return_type = kwargs.get('return', ReturnType['meta'].name)
+    cache_option = to_bool(kwargs.get('cache', 'true'))
+    time_option = to_bool(kwargs.get('time', 'true'))
+    destination = get_key(path, storage_type)
+    file_type = Path(destination).suffix[1:]
     start_time = timeit.default_timer()
+    valid = True
 
-    if source not in [Source.s3.name, Source.sd.name, Source.sd.bin]:
-        return_val = {'error': f'{source=} is not supported'}
-        print(return_val)
-        return return_val
+    if storage_type not in [e.name for e in StorageType]:
+        valid = False
+        return_val = {'error': f'{storage_type=} is not a supported storage storage_type: {[e.name for e in StorageType]}'}
 
-    if destination in cache:
-        valid = True
+    if return_type not in [e.name for e in ReturnType]:
+        valid = False
+        return_val = {'error': f'{return_type=} is not a supported return type: {[e.name for e in ReturnType]}'}
+
+    if file_type not in [e.name for e in FileType]:
+        valid = False
+        return_val = {'error': f'{file_type=} is not a supported file type: {[e.name for e in FileType]}'}
+
+    if valid and destination in cache:
         return_val = cache.get(destination)
         print('cache hit, key:' + f'{destination}, time: {access_time(start_time)} ')
-    else:
+    elif valid:
         cache_item = get_cache_item_from_local_file(destination)
         if cache_item is not None:
             cache.update(cache_item)
-            valid = True
             return_val = cache.get(destination)
             print(f'cache updated from local file, key: {destination} {access_time(start_time)}')
         else:
-            cache_item = get_cache_item_from_remote_file(path, source)
+            cache_item = get_cache_item_from_remote_file(path, storage_type)
             if cache_item is not None:
                 cache.update(cache_item)
-                valid = True
                 return_val = cache.get(destination)
             else:
                 valid = False
-                return_val = 'Error: ' + f'{destination}'
+                return_val = {'Error: ' + f'{destination}'}
     debug(valid, return_val)
 
-    if valid and time_option:
+    if valid and return_type == 'meta' and time_option:
         return_val = {'result': 'success ' + access_time(start_time)}
-    else:
+    elif valid and return_type == 'meta':
         return_val = {'result': 'success'}
 
-    return return_val if valid else {'error': return_val}
+    return return_val
 
 
 def cache_create(path):
@@ -283,15 +305,11 @@ def cache_head(path=None, options=None):
     return return_val
 
 
-def builtin_functions(kwargs):
-    function = kwargs.get('function')
+def builtin_functions(function, kwargs):
+    if DEBUG: print(f'===> builtin_functions {function=} {kwargs=}')
     path = kwargs.get('path')
     if function in ['cache_read', 'cache_create', 'cache_delete']:
-        valid, return_val = validate_file_extension(path)
-        if valid:
-            return_val = globals()[function](kwargs)
-        else:
-            print(f'invalid path {path} ')
+        return_val = globals()[function](kwargs)
     elif function in ['cache_head']:
         options = kwargs.get('options')
         return_val = globals()[function](path, options)
@@ -304,29 +322,26 @@ def builtin_functions(kwargs):
     return return_val
 
 
-def custom_functions(function, args, kwargs):
+def custom_functions(function, args):
+    if DEBUG: print(f'===> custom_functions {function=} {args=}')
     full_module_name = 'function.' + function
-    # todo: timeit
     return_val = False
     try:
         module = importlib.import_module(full_module_name)
         function_ref = getattr(module, 'main')
-        return_val = function_ref(cache, *args, **kwargs)
+        return_val = function_ref(cache, *args)
     except Exception as e:
-        print(f'function not found: {function=} {e}')
+        print(f'Exception: {function=} {e}')
 
     return return_val
 
 
-def function_router(*args, **kwargs):
-    function = kwargs.get('function')
-    print(f'===> {function=} {args=} {kwargs=}')
-    if DEBUG: print(f'beginning {cache.keys()=}')
+def function_router(function, *args, **kwargs):
+    if DEBUG: print(f'===> function_router {function=} {args=} {kwargs=}')
     if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
-        return_val = builtin_functions(kwargs)
+        return_val = builtin_functions(function, kwargs)
     else:
-        return_val = custom_functions(function, args, kwargs)
-    if DEBUG: print(f'ending {cache.keys()=}')
+        return_val = custom_functions(function, args)
     print(f'<=== {return_val=}')
     print(f'')
     return return_val
@@ -337,12 +352,12 @@ def run(function, *args, **kwargs):
 
 
 def function_create(function_name, function_body):
-    print(f'{function_name=} {function_body=}')
+    if DEBUG: print(f'===> function_create {function_name=} {function_body=}')
 
     try:
         compile(function_body, f'{function_name}.py', 'exec')
     except Exception as e:
-        print(f'compile error {function_body=} {function_name=} {e=}')
+        print(f'Exception {e=}')
         return False
     with open(LOCAL_FUNCTION_DIR + f'{function_name}.py', 'w') as file:
         file.write(function_body)
@@ -354,6 +369,16 @@ dummy_content2 = {'foo': 'bar', 'nested': dummy_content1}
 cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': dummy_content2}}
 
 if __name__ == '__main__':
+
+    function_name = 'test2'
+    function_body = ''
+    compile(function_body, f'{function_name}.py', 'exec')
+
+    s = ".dfa:sssssssssssssssssssssif:e"
+    print(s)
+    print(s[1:])
+    exit()
+
     AWS_DATA_DIR = 'json/'
     AWS_BUCKET_NAME = 'press0-test'
     AWS_FUNCTION_DIR = 'json/'

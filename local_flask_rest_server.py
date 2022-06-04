@@ -8,7 +8,7 @@ from flask_restful import Api, Resource, fields, marshal
 
 app = Flask(__name__, static_url_path="")
 api = Api(app)
-DEBUG = False
+DEBUG = True
 
 
 
@@ -27,6 +27,7 @@ class CacheAPI(Resource):
         start = int(request.args.get('start', 1))
         stop = int(request.args.get('stop', 100))
         key = request.args.get('key', None)
+        q = int(request.args.get('q', -1))
         if DEBUG:
             function_name = request.args.get('function_name', 'None')
             function_body_1 = request.args.get('function_body', 'None')
@@ -37,8 +38,12 @@ class CacheAPI(Resource):
             print(f'{function_body_1=}')
             print(f'{function_body=}')
             print('------')
+            print(f'===> flask {function=} {request.args=}')
+        return_value = ''
         if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
+
             return_value = cache_api.function_router(**request.args)
+
             cache_item = {'path': path, 'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),
@@ -46,15 +51,17 @@ class CacheAPI(Resource):
                 'value': fields.String
             }
         else:
-            return_value = None
-            if function == 'random_number':
-                return_value = cache_api.function_router(function, start, stop)
-            elif function in ['echo', 'echo1', 'echo2']:
+            if function in ['echo', 'echo1', 'echo2']:
                 return_value = cache_api.function_router(function, message)
+            elif function == 'random_number':
+                return_value = cache_api.function_router(function, start, stop)
             elif function == 'stats_cache_item':
                 return_value = cache_api.function_router(function, key)
             elif function == 'stats_cache':
                 return_value = cache_api.function_router(function)
+            elif function == 'test':
+                return_value = cache_api.function_router(function, q)
+
             cache_item = {'value': return_value}
             cache_item_fields = {
                 'uri': fields.Url('cache_item'),
