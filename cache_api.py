@@ -315,7 +315,7 @@ def custom_functions(function, kwargs):
         function_ref = getattr(module, 'main')
         return_val = function_ref(cache, **kwargs)
     except Exception as e:
-        print(f'Exception: {function=} {e}')
+        print(f'Exception: {e}')
     return return_val
 
 

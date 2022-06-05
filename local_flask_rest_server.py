@@ -44,11 +44,12 @@ class CacheAPI(Resource):
             elif function == 'random_number':
                 kwargs['start'] = int(request.args.get('start', 1))
                 kwargs['stop'] = int(request.args.get('stop', 100))
-                # return_value = cache_api.function_router(**kwargs)
             elif function.startswith('test'):
                 ...
+            elif function == 'filelist':
+                ...
             else:
-                return f'unknown function {function}'
+                return f'unknown function: {function}'
 
         return_value = cache_api.function_router(**kwargs)
         cache_item, cache_item_fields = return_helper(path, return_value)

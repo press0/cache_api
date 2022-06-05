@@ -37,10 +37,12 @@ if __name__ == "__main__":
 
 '''
 examples
-    '{ "function":"function_create", "function_name":"test2", "function_file":"function/test.py" } '
+    '{ "function":"function_create", "function_name":"filelist", "function_file":"function/filelist.py" } '
     '{ "function":"function_create", "function_name":"test3", "function_file":"function/test.py" } '
     '{ "function":"echo",            "message":"hello" } '
     '{ "function":"test2",           "q":"123" } '
     '{ "function":"random_number",   "start":"1", "stop":"100" } '
+    '{ "function":"cache_read", "path":"test/af1.parquet", "storage":"s3" } '
+    
 
 '''
