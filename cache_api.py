@@ -307,18 +307,12 @@ def cache_head(path=None, options=None):
 
 def builtin_functions(function, kwargs):
     if DEBUG: print(f'===> builtin_functions {function=} {kwargs=}')
-    path = kwargs.get('path')
     if function in ['cache_read', 'cache_create', 'cache_delete']:
         return_val = globals()[function](kwargs)
-    elif function in ['cache_head']:
-        options = kwargs.get('options')
-        return_val = globals()[function](path, options)
-    elif function in ['xxxfunction_create']:
-        return_val = globals()[function](path)
     elif function in ['function_create']:
-        function_name = kwargs.get('function_name')
-        function_body = kwargs.get('function_body')
-        return_val = globals()[function](function_name, function_body)
+        return_val = globals()[function](kwargs.get('function_name'), kwargs.get('function_body'))
+    elif function in ['cache_head']:
+        return_val = globals()[function](kwargs.get('path'), kwargs.get('options'))
     return return_val
 
 
@@ -347,7 +341,7 @@ def function_router(function, *args, **kwargs):
     return return_val
 
 
-def run(function, *args, **kwargs):
+def test(function, *args, **kwargs):
     return function_router(function, *args, **kwargs)
 
 
@@ -370,21 +364,15 @@ cache = {'file1.json': dummy_content1, 'file3.json': {'foo': 'bar', 'nested': du
 
 if __name__ == '__main__':
 
-    function_name = 'test2'
-    function_body = ''
-    compile(function_body, f'{function_name}.py', 'exec')
-
-    s = ".dfa:sssssssssssssssssssssif:e"
-    print(s)
-    print(s[1:])
-    exit()
-
     AWS_DATA_DIR = 'json/'
     AWS_BUCKET_NAME = 'press0-test'
     AWS_FUNCTION_DIR = 'json/'
 
-    run(function='random_number', start=1, stop=10)
-    run(function='echo', message='hello world')
+    test('random_number', 1, 100)
+    test('echo', 'hello world')
+
+    quit()
+
     run(function='cache_create', path='file1.snappy.parq')
     run(function='cache_create', path='file1.snappy.parquet')
     run(function='cache_read', path='file1.snappy.parquet')

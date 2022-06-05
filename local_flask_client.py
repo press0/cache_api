@@ -35,7 +35,11 @@ if __name__ == "__main__":
 # todo: add cache param
 # todo: compile(code_str, 'test.py', 'exec')
 
-# examples
-# '{ "function":"function_create", "function_name":"test2", "function_file":"function/test.py" } '
-# '{ "function":"function_create", "function_name":"test3", "function_file":"function/test.py" } '
-# '{ "function":"echo", "message":"hello" } '
+'''
+examples
+    '{ "function":"function_create", "function_name":"test2", "function_file":"function/test.py" } '
+    '{ "function":"function_create", "function_name":"test3", "function_file":"function/test.py" } '
+    '{ "function":"echo",            "message":"hello" } '
+    '{ "function":"test2",           "q":"222222222" } '
+
+'''
