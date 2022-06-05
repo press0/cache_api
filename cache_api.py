@@ -47,11 +47,13 @@ class ReturnType(Enum):
     data = 2
 
 
-def make_deep_directory(string_path):
-    path = Path(string_path)
+def make_deep_directory(path, storage_type):
+    DEBUG2 = False
+    destination = get_key(path, storage_type)
+    path = Path(destination)
     parent = Path(path).parent
 
-    if DEBUG:
+    if DEBUG2:
         print(f'{path=}')
         print(f'{path.name=}')
         print(f'{path.exists()=}')
@@ -62,15 +64,14 @@ def make_deep_directory(string_path):
     if not parent.exists():
         parent.mkdir(parents=True, exist_ok=True)
 
-    if DEBUG:
+    if DEBUG2:
         print(f'{parent=}')
         print(f'{parent.name=}')
         print(f'{parent.exists()=}')
 
 
 def get_cache_item_from_remote_file(path, storage_type):
-    destination = get_key(path, storage_type)
-    make_deep_directory(destination)
+    make_deep_directory(path, storage_type)
 
     if storage_type == StorageType.s3.name:
         return get_cache_item_from_remote_file_s3(path, storage_type)
@@ -179,10 +180,6 @@ def evict_cache_entry(destination):
             print(f'file deleted {destination}')
         else:
             print(f'file not deleted {destination} {return_val}')
-    else:
-        print(f'{return_val}')
-        return valid, return_val
-    print(f'{return_val}')
     return valid, return_val
 
 
@@ -194,11 +191,6 @@ def delete_file(destination):
         return False, f'error deleting file {destination} {e}'
 
 
-def debug(valid, return_val):
-    if DEBUG:
-        print(f'valid:{valid} return_val:{return_val}')
-
-
 def cache_delete(kwargs):
     path = kwargs.get('path')
     storage_type = kwargs.get('storage', StorageType['sd'].name)
@@ -207,10 +199,9 @@ def cache_delete(kwargs):
         valid, return_val = evict_cache_entry(destination)
     else:
         valid = False
-        return_val = 'cache_item not found'
+        return_val = f'cache_item not found: {destination}'
     if valid:
         return_val = {'cache_item deleted': destination}
-        debug(valid, return_val)
     return return_val if valid else {'error': return_val}
 
 
@@ -271,7 +262,6 @@ def cache_read(kwargs):
             else:
                 valid = False
                 return_val = {'Error: ' + f'{destination}'}
-    debug(valid, return_val)
 
     if valid and return_type == 'meta' and time_option:
         return_val = {'result': 'success ' + access_time(start_time)}
@@ -316,17 +306,16 @@ def builtin_functions(function, kwargs):
     return return_val
 
 
-def custom_functions(function, args):
-    if DEBUG: print(f'===> custom_functions {function=} {args=}')
+def custom_functions(function, kwargs):
+    if DEBUG: print(f'===> custom_functions {function=} {kwargs=}')
     full_module_name = 'function.' + function
     return_val = False
     try:
         module = importlib.import_module(full_module_name)
         function_ref = getattr(module, 'main')
-        return_val = function_ref(cache, *args)
+        return_val = function_ref(cache, **kwargs)
     except Exception as e:
         print(f'Exception: {function=} {e}')
-
     return return_val
 
 
@@ -335,13 +324,13 @@ def function_router(function, *args, **kwargs):
     if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
         return_val = builtin_functions(function, kwargs)
     else:
-        return_val = custom_functions(function, args)
+        return_val = custom_functions(function, kwargs)
     print(f'<=== {return_val=}')
     print(f'')
     return return_val
 
 
-def test(function, *args, **kwargs):
+def run(function, *args, **kwargs):
     return function_router(function, *args, **kwargs)
 
 
@@ -368,25 +357,34 @@ if __name__ == '__main__':
     AWS_BUCKET_NAME = 'press0-test'
     AWS_FUNCTION_DIR = 'json/'
 
-    test('random_number', 1, 100)
-    test('echo', 'hello world')
+    result = run('random_number', start=1, stop=100)
+    print(f'{result=}')
+    assert 1 < result < 100
+    result = run('echo', message='hello world')
+    assert result == 'hello world'
+    result = run(function='cache_delete', path='file.does.not.exist.parquet')
+    assert 'cache_item not found' in result['error']
+    result = run(function='cache_read', path='file.unsupported.type.parq')
+    assert "'parq' is not a supported file type" in result['error']
+    result = run(function='cache_read', path='file2.snappy.parquet')
+    assert 'success' in result['result']
+    result = run(function='cache_delete', path='file2.snappy.parquet')
+    assert 'file2.snappy.parquet' in result['cache_item deleted']
+    result = run(function='cache_delete', path='file2.snappy.parquet')
+    assert 'cache_item not found' in result['error']
 
-    quit()
-
-    run(function='cache_create', path='file1.snappy.parq')
-    run(function='cache_create', path='file1.snappy.parquet')
-    run(function='cache_read', path='file1.snappy.parquet')
-    run(function='stats_cache_item', key='file1.snappy.parquet')
-    run(function='stats_cache')
-    #### run(function='cache_delete', path='file1.snappy.parquet')
     function_name = 'test' + str(random.randint(10, 20))
     test_local_python_function_file = LOCAL_FUNCTION_DIR + function_name + '.py'
     quoted_function_body = 'def%20main%28cache%2C%20q%2C%20w%29%3A%0A%20%20%20x%3D2%0A%20%20%20return%20q'
     function_body = urllib.parse.unquote(quoted_function_body)
-    run(function='function_create', function_name=function_name, function_body=function_body)
-    result_val = run(function='test', q='q says hello', w='w says hello')
-    assert result_val == 'q says hello'
+    result = run(function='function_create', function_name=function_name, function_body=function_body)
+    assert result
+    result = run(function='test', q='q says hello', w='w says hello')
+    assert result == 'q says hello'
+
     if os.path.exists(test_local_python_function_file):
         os.remove(test_local_python_function_file)
-    result_val = run(function='test123', q='q says hello', w='w says hello')
-    assert not result_val
+    result = run(function='test123', q='q says hello', w='w says hello')
+    print(f'{result=}')
+    assert not result
+

@@ -40,6 +40,7 @@ examples
     '{ "function":"function_create", "function_name":"test2", "function_file":"function/test.py" } '
     '{ "function":"function_create", "function_name":"test3", "function_file":"function/test.py" } '
     '{ "function":"echo",            "message":"hello" } '
-    '{ "function":"test2",           "q":"222222222" } '
+    '{ "function":"test2",           "q":"123" } '
+    '{ "function":"random_number",   "start":"1", "stop":"100" } '
 
 '''

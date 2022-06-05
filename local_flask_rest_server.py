@@ -28,38 +28,29 @@ class CacheAPI(Resource):
     def get(self):
         function = request.args.get('function', 'read')
         path = request.args.get('path', None)
-        options = request.args.get('options', None)
-        message = request.args.get('message', None)
-        start = int(request.args.get('start', 1))
-        stop = int(request.args.get('stop', 100))
-        key = request.args.get('key', None)
-        q = int(request.args.get('q', -1))
         if DEBUG: print(f'===> flask {function=} {request.args=}')
-        return_value = ''
+        kwargs = dict(request.args)
+
         if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head']:
-            return_value = cache_api.function_router(**request.args)
+            ...
 
         elif function in ['function_create']:
             function_body_1 = request.args.get('function_body', 'None')
             function_body = urllib.parse.unquote(function_body_1)
-            kwargs2 = {}
-            kwargs2['function'] = function
-            kwargs2['function_body'] = function_body
-            kwargs2['function_name'] = request.args.get('function_name')
-            return_value = cache_api.function_router(**kwargs2)
-
+            kwargs['function_body'] = function_body
         else:
             if function.startswith('echo'):
-                return_value = cache_api.function_router(function, message)
+                ...
             elif function == 'random_number':
-                return_value = cache_api.function_router(function, start, stop)
+                kwargs['start'] = int(request.args.get('start', 1))
+                kwargs['stop'] = int(request.args.get('stop', 100))
+                # return_value = cache_api.function_router(**kwargs)
             elif function.startswith('test'):
-                return_value = cache_api.function_router(function, q)
-            elif function == 'stats_cache_item':
-                return_value = cache_api.function_router(function, key)
-            elif function == 'stats_cache':
-                return_value = cache_api.function_router(function)
+                ...
+            else:
+                return f'unknown function {function}'
 
+        return_value = cache_api.function_router(**kwargs)
         cache_item, cache_item_fields = return_helper(path, return_value)
         valid = True  # todo: ???
         return {'return': marshal(cache_item, cache_item_fields)} if valid else {'error': return_value}
