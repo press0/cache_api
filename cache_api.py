@@ -113,7 +113,7 @@ def get_cache_item_from_remote_file_s3(path, storage_type):
 
 def get_key(kwargs):
     path = kwargs.get('path')
-    storage_type = kwargs.get('storage_type', StorageType['s3'].name)
+    storage_type = kwargs.get('storage', StorageType['sd'].name)
     return get_key(path, storage_type)
 
 
@@ -201,7 +201,7 @@ def debug(valid, return_val):
 
 def cache_delete(kwargs):
     path = kwargs.get('path')
-    storage_type = kwargs.get('storage_type', StorageType['s3'].name)
+    storage_type = kwargs.get('storage', StorageType['sd'].name)
     destination = get_key(path, storage_type)
     if destination in cache:
         valid, return_val = evict_cache_entry(destination)
@@ -233,7 +233,7 @@ def to_bool(string_bool):
 
 def cache_read(kwargs):
     path = kwargs.get('path')
-    storage_type = kwargs.get('storage', StorageType['s3'].name)
+    storage_type = kwargs.get('storage', StorageType['sd'].name)
     return_type = kwargs.get('return', ReturnType['meta'].name)
     cache_option = to_bool(kwargs.get('cache', 'true'))
     time_option = to_bool(kwargs.get('time', 'true'))
