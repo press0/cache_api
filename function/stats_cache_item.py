@@ -16,8 +16,8 @@ def main(cache, key):
         return {'result': f'cache key {key} not found'}
 
     if file_extension == '.json':
-        print(f'{item=}')
-        return item
+        print(f'{item.keys()=}')
+        return item.keys()
 
     if file_extension == '.parquet':
         old_stdout = sys.stdout

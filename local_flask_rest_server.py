@@ -48,12 +48,16 @@ class CacheAPI(Resource):
                 ...
             elif function == 'filelist':
                 ...
+            elif function == 'stats_cache_item':
+                kwargs['key'] = request.args.get('key')
+            elif function == 'stats_cache':
+                ...
             else:
                 return f'unknown function: {function}'
 
         return_value = cache_api.function_router(**kwargs)
         cache_item, cache_item_fields = return_helper(path, return_value)
-        valid = True  # todo: ???
+        valid = True  # todo
         return {'return': marshal(cache_item, cache_item_fields)} if valid else {'error': return_value}
 
 

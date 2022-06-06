@@ -222,16 +222,15 @@ def to_bool(string_bool):
     return True if string_bool.lower() == 'true' else False
 
 
-def cache_read(kwargs):
+def validate_input(kwargs):
     path = kwargs.get('path')
     storage_type = kwargs.get('storage', StorageType['sd'].name)
     return_type = kwargs.get('return', ReturnType['meta'].name)
-    cache_option = to_bool(kwargs.get('cache', 'true'))
-    time_option = to_bool(kwargs.get('time', 'true'))
     destination = get_key(path, storage_type)
     file_type = Path(destination).suffix[1:]
-    start_time = timeit.default_timer()
+
     valid = True
+    return_val = ''
 
     if storage_type not in [e.name for e in StorageType]:
         valid = False
@@ -244,6 +243,19 @@ def cache_read(kwargs):
     if file_type not in [e.name for e in FileType]:
         valid = False
         return_val = {'error': f'{file_type=} is not a supported file type: {[e.name for e in FileType]}'}
+
+    return valid, return_val
+
+
+def cache_read(kwargs):
+    path = kwargs.get('path')
+    storage_type = kwargs.get('storage', StorageType['sd'].name)
+    return_type = kwargs.get('return', ReturnType['meta'].name)
+    time_option = to_bool(kwargs.get('time', 'true'))
+    destination = get_key(path, storage_type)
+    start_time = timeit.default_timer()
+
+    valid, return_val = validate_input(kwargs)
 
     if valid and destination in cache:
         return_val = cache.get(destination)
