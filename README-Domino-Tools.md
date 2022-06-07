@@ -5,17 +5,17 @@ User-defined data and function APIs
  - fast data access 
  - easy function deployment
 
-Data is accessible from either:
- - external Domino APIs
- - internal user-defined functions
-
-
 ## Data API
 The Data API provides access to user-defined data, sub-second 
 
  - storage types: AWS S3; on-premise S: drive folder
  - file types: parquet, json, binary
  - options: caching, timing
+
+Data is accessible from either:
+ - external Domino APIs
+ - internal user-defined functions
+
 
 ## Function API
 The Function API deploys user-defined functions in seconds
