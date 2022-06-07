@@ -20,7 +20,7 @@ The Data API provides access to user-defined data, sub-second
 ## Function API
 The Function API deploys user-defined functions in seconds
 
-## Domino local client
+## Domino API local client
 ``````
 python domino_client.py ' <JSON> '
 ``````
@@ -49,8 +49,8 @@ S: drive access requires a SNOW ticket
 ``````
 
 ## execute user-defined functions
-```
-Domino API: { "function":"user_defined_function" ...parameters}
+```python
+Domino API: { "function":"user_defined_function", **kwargs}
 ``````
 ```
 Function API: user_defined_function(...parameters)
