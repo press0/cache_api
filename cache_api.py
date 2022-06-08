@@ -350,7 +350,8 @@ def function_create(function_name, function_body):
     if DEBUG: print(f'===> function_create {function_name=} {function_body=}')
 
     try:
-        compile(function_body, f'{function_name}.py', 'exec')
+        function_body_1 = urllib.parse.unquote(function_body)
+        compile(function_body_1, f'{function_name}.py', 'exec')
     except Exception as e:
         print(f'Exception {e=}')
         return False
