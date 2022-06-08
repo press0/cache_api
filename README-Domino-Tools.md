@@ -5,11 +5,11 @@
 ](https://dominodatalab.github.io/api-docs/)
 
 
-Extensions:
+Table of Contents
 
 1. Data API, for fast data access in the LGIM ecosystem 
 2. Function API, for fast function deployment
-
+3. Examples
 
 ## 1 Data API
 The Data API provides access to user-defined data, sub-second 
