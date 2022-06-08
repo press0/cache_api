@@ -213,7 +213,7 @@ def access_time(start_time):
 
 
 def read(kwargs):
-    cache_read(kwargs)
+    data_read(kwargs)
     destination = get_key(kwargs)
     return cache.get(destination)
 
@@ -247,7 +247,7 @@ def validate_input(kwargs):
     return valid, return_val
 
 
-def cache_read(kwargs):
+def data_read(kwargs):
     path = kwargs.get('path')
     storage_type = kwargs.get('storage', StorageType['sd'].name)
     return_type = kwargs.get('return', ReturnType['meta'].name)
@@ -284,7 +284,7 @@ def cache_read(kwargs):
 
 
 def cache_create(path):
-    return cache_read(path)
+    return data_read(path)
 
 
 def cache_head(path=None, options=None):
@@ -309,7 +309,7 @@ def cache_head(path=None, options=None):
 
 def builtin_functions(function, kwargs):
     if DEBUG: print(f'===> builtin_functions {function=} {kwargs=}')
-    if function in ['cache_read', 'cache_create', 'cache_delete']:
+    if function in ['data_read', 'cache_create', 'cache_delete']:
         return_val = globals()[function](kwargs)
     elif function in ['function_create']:
         return_val = globals()[function](kwargs.get('function_name'), kwargs.get('function_body'))
@@ -333,7 +333,7 @@ def custom_functions(function, kwargs):
 
 def function_router(function, *args, **kwargs):
     if DEBUG: print(f'===> function_router {function=} {args=} {kwargs=}')
-    if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
+    if function in ['data_read', 'cache_create', 'cache_delete', 'cache_head', 'function_create']:
         return_val = builtin_functions(function, kwargs)
     else:
         return_val = custom_functions(function, kwargs)
@@ -376,9 +376,9 @@ if __name__ == '__main__':
     assert result == 'hello world'
     result = run(function='cache_delete', path='file.does.not.exist.parquet')
     assert 'cache_item not found' in result['error']
-    result = run(function='cache_read', path='file.unsupported.type.parq')
+    result = run(function='data_read', path='file.unsupported.type.parq')
     assert "'parq' is not a supported file type" in result['error']
-    result = run(function='cache_read', path='file2.snappy.parquet')
+    result = run(function='data_read', path='file2.snappy.parquet')
     assert 'success' in result['result']
     result = run(function='cache_delete', path='file2.snappy.parquet')
     assert 'file2.snappy.parquet' in result['cache_item deleted']

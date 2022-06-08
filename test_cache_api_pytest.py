@@ -31,9 +31,9 @@ def test_cache_create_type_supported():
     assert return_val == {'result': 'success'}
 
 
-def test_cache_read():
+def test_data_read():
     sut.run(function='cache_create', path='file1.snappy.parquet')
-    return_val = sut.run(function='cache_read', path='file1.snappy.parquet')
+    return_val = sut.run(function='data_read', path='file1.snappy.parquet')
     assert return_val == {'result': 'success'}
 
 

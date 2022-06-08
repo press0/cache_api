@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 from dotenv import load_dotenv
 load_dotenv()
 import cache_api
@@ -31,7 +32,7 @@ class CacheAPI(Resource):
         if DEBUG: print(f'===> flask {function=} {request.args=}')
         kwargs = dict(request.args)
 
-        if function in ['cache_read', 'cache_create', 'cache_delete', 'cache_head']:
+        if function in ['data_read', 'cache_create', 'cache_delete', 'cache_head']:
             ...
 
         elif function in ['function_create']:
@@ -49,8 +50,10 @@ class CacheAPI(Resource):
             elif function == 'filelist':
                 ...
             elif function == 'stats_cache_item':
-                kwargs['key'] = request.args.get('key')
+                ...
             elif function == 'stats_cache':
+                ...
+            elif function == 'pi':
                 ...
             else:
                 return f'unknown function: {function}'
