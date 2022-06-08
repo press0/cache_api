@@ -14,27 +14,33 @@ The Data API provides access to user-defined data, sub-second
  - file types: parquet, json, binary
  - options: caching, timing
 
-All data is accessible from either:
- - standard Domino APIs
- - user-defined functions
+Data is accessible from either:
+ - standard Domino API
+ - Function API (user-defined functions)
 
 
 ## 1.1 AWS S3 data access 
 Read data from a configured AWS bucket and prefix
+
+Domino API: 
 ```
-Domino API: { "function": "data_read",   "path": "10MB.bin", "storage="s3"}
+{ "function": "data_read",   "path": "10MB.bin", "storage="s3"}
 ```
+Function API: 
 ```
-Function API: data_read(path="10MB.bin", storage="s3")
+data_read(path="10MB.bin", storage="s3")
 ```
 
 ## 1.2 S: Drive data access 
 Read data from an S: Drive configured folder
+
+Domino API: 
 ```
-Domino API:{ "function": "data_read",   "path": "10MB.bin", "storage="sd"}
+{ "function": "data_read",   "path": "10MB.bin", "storage="sd"}
 ```
+Function API: 
 ```
-Function API: data_read(path="10MB.bin", storage="sd")
+data_read(path="10MB.bin", storage="sd")
 ```
 Note: S: drive access requires a SNOW ticket 
 
@@ -50,20 +56,26 @@ def main(cache, args):
 
 
 ## 2.2 deploy user-defined functions 
+
+Domino API: 
 ```
-Domino API: { "function":"function_create", "function_name":"udf", "function_file":"udf.py" } 
+{ "function":"function_create", "function_name":"udf", "function_file":"udf.py" } 
 ```
+Function API: 
 ```
-Function API: function_create(function_name, function_file)
+function_create(function_name, function_file)
 ```
 
 
 ## 2.3 call user-defined functions
-```python
-Domino API: { "function":"udf", kwargs}
+
+Domino API: 
 ```
+{ "function":"udf", kwargs}
 ```
-Function API: udf(args)
+Function API: 
+```
+udf(args)
 ```
 
 ## 3 Examples
