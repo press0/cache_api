@@ -1,11 +1,15 @@
 # Domino Tools
 
-Data and Function APIs
 
- - fast data access 
- - fast function deployment
+[**The Domino Model API** serves python code as a low-latency web service.
+](https://dominodatalab.github.io/api-docs/)
 
-Kick-starter use case: develop fast data and functions 
+
+Extensions:
+
+ - Data API, for fast data access in the LGIM ecosystem 
+ - Function API, for fast function deployment
+
 
 ## 1 Data API
 The Data API provides access to user-defined data, sub-second 
@@ -15,7 +19,7 @@ The Data API provides access to user-defined data, sub-second
  - options: caching, timing
 
 Data is accessible from either:
- - standard Domino API
+ - Domino REST API
  - Function API (user-defined functions)
 
 
@@ -32,7 +36,7 @@ data_read(path="10MB.bin", storage="s3")
 ```
 
 ## 1.2 S: Drive data access 
-Read data from an S: Drive configured folder
+Read data from a configured folder on the LGIM S: Drive 
 
 Domino API: 
 ```
@@ -42,7 +46,7 @@ Function API:
 ```
 data_read(path="10MB.bin", storage="sd")
 ```
-Note: S: drive access requires a SNOW ticket 
+Note: SNOW ticket  required  
 
 ## 2 Function API
 The Function API deploys user-defined functions in seconds
@@ -96,7 +100,7 @@ domino_client.py '{ "function": "cache_read", "path": "10MB.bin" storage="s3") '
 ``````
 domino_client.py '{ "function": "cache_read", "path": "10MB.bin" storage="sd") '
 `````` 
-### 3.3 random generator
+### 3.3 random number generator
 ``````
 domino_client.py '{ "function":"function_create", "function_name":"random_number", "function_file":"random_number.py" } '
 domino_client.py '{ "function":"random_number",   "start":1, "stop":100 } ' 
