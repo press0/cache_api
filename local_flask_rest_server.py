@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 from dotenv import load_dotenv
+
 load_dotenv()
 import cache_api
-import urllib
 
 from flask import Flask, request
 from flask_restful import Api, Resource, fields, marshal
@@ -32,31 +32,27 @@ class CacheAPI(Resource):
         if DEBUG: print(f'===> flask {function=} {request.args=}')
         kwargs = dict(request.args)
 
-        if function in ['data_read', 'cache_create', 'cache_delete', 'cache_head']:
+        if function == 'random_number':
+            kwargs['start'] = int(request.args.get('start', 1))
+            kwargs['stop'] = int(request.args.get('stop', 100))
+        elif function in ['data_read', 'cache_create', 'cache_delete', 'cache_head']:
             ...
-
         elif function in ['function_create']:
-            function_body_1 = request.args.get('function_body', 'None')
-            function_body = urllib.parse.unquote(function_body_1)
-            kwargs['function_body'] = function_body
+            ...
+        elif function.startswith('echo'):
+            ...
+        elif function.startswith('test'):
+            ...
+        elif function == 'filelist':
+            ...
+        elif function == 'stats_cache_item':
+            ...
+        elif function == 'stats_cache':
+            ...
+        elif function == 'pi':
+            ...
         else:
-            if function.startswith('echo'):
-                ...
-            elif function == 'random_number':
-                kwargs['start'] = int(request.args.get('start', 1))
-                kwargs['stop'] = int(request.args.get('stop', 100))
-            elif function.startswith('test'):
-                ...
-            elif function == 'filelist':
-                ...
-            elif function == 'stats_cache_item':
-                ...
-            elif function == 'stats_cache':
-                ...
-            elif function == 'pi':
-                ...
-            else:
-                return f'unknown function: {function}'
+            ...
 
         return_value = cache_api.function_router(**kwargs)
         cache_item, cache_item_fields = return_helper(path, return_value)

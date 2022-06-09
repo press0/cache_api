@@ -248,6 +248,7 @@ def validate_input(kwargs):
 
 
 def data_read(kwargs):
+    if DEBUG: print(f'===> data_read {kwargs=}')
     path = kwargs.get('path')
     storage_type = kwargs.get('storage', StorageType['sd'].name)
     return_type = kwargs.get('return', ReturnType['meta'].name)
@@ -347,16 +348,16 @@ def run(function, *args, **kwargs):
 
 
 def function_create(function_name, function_body):
-    if DEBUG: print(f'===> function_create {function_name=} {function_body=}')
+    function_body_1 = urllib.parse.unquote(function_body)
+    if DEBUG: print(f'===> function_create {function_name=} {function_body_1=}')
 
     try:
-        function_body_1 = urllib.parse.unquote(function_body)
         compile(function_body_1, f'{function_name}.py', 'exec')
     except Exception as e:
         print(f'Exception {e=}')
         return False
     with open(LOCAL_FUNCTION_DIR + f'{function_name}.py', 'w') as file:
-        file.write(function_body)
+        file.write(function_body_1)
     return True
 
 

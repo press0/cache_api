@@ -29,7 +29,7 @@ if __name__ == "__main__":
 
     print(f'{response.status_code=}')
     print(f'{response.headers=}')
-    print(f'{response.json()=}')
+    # print(f'{response.text=}')
     print(f'========>{response.json()=}')
     # print(f'{response.json()["value"]["value"]=}')
 
@@ -43,7 +43,11 @@ examples
     '{ "function":"echo",            "message":"hello" } '
     '{ "function":"test2",           "q":"123" } '
     '{ "function":"random_number",   "start":"1", "stop":"100" } '
-    '{ "function":"cache_read", "path":"test/af1.parquet", "storage":"s3" } '
+    '{ "function":"data_read", "path":"test/1MB.bin"} '
     
+
+    function_file_name = cli_input["function_file"]
+    function_file = open(function_file_name, "r")
+    response = requests.post(endpoint, files={"function_file": function_file})
 
 '''
